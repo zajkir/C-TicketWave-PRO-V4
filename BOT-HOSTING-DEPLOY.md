@@ -39,3 +39,15 @@ Health endpoint: `GET /health` → `{"status":"ok"}`.
 Do not use plain HTTP to log in. Use the provider's TLS termination / HTTPS domain. Enable secure cookies and origin restrictions above. The app is designed for a single trusted team, not multi-tenant SaaS without additional security work. Keep user and document backups offsite.
 
 Ticketmaster or Viagogo listing publication is not required for the inventory app to function. The V4 interface deliberately does not expose the older Find Events / Integrations / Event Watchlist pages, and it does not automatically post to Viagogo.
+
+
+## Optional Google / Gmail login
+
+For team members who want to sign up or sign in using Google, configure in **Environment / Secrets**:
+- `CTW_GOOGLE_CLIENT_ID`: Google Cloud Web Application OAuth client ID
+- `CTW_GOOGLE_CLIENT_SECRET`: Google Cloud OAuth client secret
+- `CTW_PUBLIC_BASE_URL`: your actual public HTTPS application origin
+
+In Google Cloud's **Authorized redirect URIs**, add `https://YOUR-REAL-DOMAIN/api/auth/google/callback`, replacing the example with your live domain. Keep `CTW_SECURE_COOKIES=1`. Restart the deployment after changing environment values. Members can then link Google in **My Account**, or use an administrator invitation to register through Google.
+
+See [GOOGLE-LOGIN-SETUP.md](GOOGLE-LOGIN-SETUP.md). No access to Gmail inbox is requested.
