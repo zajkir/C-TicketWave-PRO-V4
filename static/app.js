@@ -44,6 +44,7 @@ function hrefButton(text,action){return `<button class="panel-link" type="button
 function isVisible(){return !!app.user}
 
 function showAuth(mode){
+ document.body.classList.add('auth-active');
  app.authMode=mode;toggle('#auth-view',true);toggle('#workspace',false);
  const meta={
   login:['Welcome back','Sign in to manage your personal ticket portfolio.','Sign in →'],
@@ -96,7 +97,7 @@ async function loadAuthState(){
  else showAuth('login');
  if(q.has('google')&&!q.has('google_error')){notify('Google account connected successfully.');history.replaceState(null,'',location.pathname+location.hash)}
 }
-function showWorkspace(){toggle('#auth-view',false);toggle('#workspace',true);const name=app.user.display_name||app.user.email;
+function showWorkspace(){document.body.classList.remove('auth-active');toggle('#auth-view',false);toggle('#workspace',true);const name=app.user.display_name||app.user.email;
  $('#workspace-name').textContent='My Personal Space';$('#sidebar-username').textContent=name;$('#sidebar-email').textContent=app.user.email;
  const initial=name.charAt(0).toUpperCase();$('#sidebar-avatar').textContent=initial;$('#top-avatar').textContent=initial;$('#workspace-initial').textContent=initial;
  drawNav();navigate((location.hash||'#overview').slice(1));
@@ -335,4 +336,26 @@ $('#modal-close').addEventListener('click',closeModal);$('#modal-cancel').addEve
 $('#modal-backdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
 $('#global-search').addEventListener('keydown',e=>{if(e.key==='Enter'){app.search=e.target.value.trim();navigate('tickets')}});
 window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#global-search').focus()}if(e.key==='Escape')closeModal()});
+// Motion is purely visual: no effect on account data or any backend request.
+(function initializeCeyrlMotion(){
+  const control=$('#motion-toggle');
+  if(!control)return;
+  const systemPrefersStill=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||false;
+  let saved=null;
+  try { saved=localStorage.getItem('ceyrl-ambient-motion'); } catch(_error) {}
+  const setMotion=(isOn)=>{
+    const enabled=Boolean(isOn)&&!systemPrefersStill;
+    document.body.classList.toggle('motion-off',!enabled);
+    control.setAttribute('aria-pressed',String(enabled));
+    control.querySelector('span').textContent=enabled?'Motion on':'Motion off';
+    control.title=systemPrefersStill?'Motion is disabled by your device accessibility settings.':(enabled?'Pause animated background':'Resume animated background');
+    control.disabled=systemPrefersStill;
+  };
+  setMotion(saved===null?!systemPrefersStill:saved==='on');
+  control.addEventListener('click',()=>{
+    const on=control.getAttribute('aria-pressed')!=='true';
+    setMotion(on);
+    try { localStorage.setItem('ceyrl-ambient-motion',on?'on':'off'); } catch(_error) {}
+  });
+})();
 loadAuthState().catch(notifyError);
