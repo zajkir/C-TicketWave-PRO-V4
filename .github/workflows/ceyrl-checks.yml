@@ -35,3 +35,4 @@ jobs:
           python -m py_compile ceyrl_v6.py
           python -m py_compile ceyrl_shield.py
           python -m py_compile ceyrl_features.py
+          python -m py_compile ceyrl_ai.py
