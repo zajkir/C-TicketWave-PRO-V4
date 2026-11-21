@@ -79,3 +79,10 @@ node --check static/app.js
 Private-data tests include registration, two account-specific databases, independently encrypted PDF files, CSRF protection, non-existence of cross-account ticket IDs and atomic sale stock controls.
 
 **Test status:** Local backend integration tests pass. The UI was inspected with representative mock data, not real customer data. Live Google OAuth/SMTP and a complete public deployment cannot be tested without your authorized credentials and hosting domain.
+
+
+## Ceyrl visual atmosphere (new)
+
+The real web frontend now includes an animated, noninteractive background with floating ticket outlines, subtle € symbols, ambient violet / teal lighting, and soft drifting particles. Its CSS is in `static/ambient.css`. Motion can be paused using the **Motion on / Motion off** button in the top bar; that preference is stored locally in each browser, not in the user database. The UI respects `prefers-reduced-motion` and disables animation when reduced motion is requested by the device.
+
+These changes affect only presentation. They do **not** alter account separation, backend routes, data storage, authentication, Google OAuth, or encrypted PDF records. After pulling the latest GitHub revision on Bot-Hosting.net, restart the deployment and refresh the page (Ctrl+F5) to load the latest assets.
