@@ -10,8 +10,8 @@ const isoLocal=(s)=>new Date(s).toISOString();
 const statusTag=(text)=>{const s=String(text||'draft').toLowerCase();const cls=s==='listed'||s==='sold'?'green':s==='ready'||s==='available'?'blue':s==='paused'?'gold':s==='cancelled'?'red':'grey';return `<span class="tag ${cls}">● ${escapeHtml(text)}</span>`};
 const app={user:null,csrf:'',authMode:'login',google:false,email:false,page:'overview',events:[],tickets:[],listings:[],sales:[],expenses:[],recaps:[],dashboard:null,search:''};
 const SECTIONS=[
- {name:'WORKSPACE',items:[['overview','▦','Overview'],['actions','✦','Action Center'],['events','▤','My Events']]},
- {name:'INVENTORY',items:[['tickets','▧','Ticket Inventory'],['listings','◇','Listings']]},
+ {name:'WORKSPACE',items:[['overview','▦','Overview'],['actions','✦','Action Center'],['copilot','✧','AI Copilot'],['radar','⌾','Event Radar'],['events','▤','My Events']]},
+ {name:'INVENTORY',items:[['tickets','▧','Ticket Inventory'],['delivery','▣','Delivery Readiness'],['shield','⬡','Double-Sale Shield'],['listings','◇','Listings']]},
  {name:'FINANCES',items:[['sales','↗','Sales Tracker'],['expenses','€','Expenses & Costs'],['analytics','◫','Analytics']]},
  {name:'PERSONAL',items:[['activity','≡','Activity Log'],['settings','♙','My Account']]}
 ];
@@ -116,6 +116,10 @@ async function renderPage(){
  switch(app.page){
   case'overview':return renderOverview();
   case'actions':return renderV6Actions();
+  case'copilot':
+  case'radar':
+  case'delivery':
+  case'shield':return renderXPage(app.page);
   case'events':return renderEvents();
   case'tickets':return renderTickets();
   case'listings':return renderListings();
