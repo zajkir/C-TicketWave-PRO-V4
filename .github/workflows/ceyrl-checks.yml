@@ -28,7 +28,10 @@ jobs:
         run: |
           node --check static/app.js
           node --check static/v6.js
+          node --check static/x.js
       - name: Compile backend modules
         run: |
           python -m py_compile app.py
           python -m py_compile ceyrl_v6.py
+          python -m py_compile ceyrl_shield.py
+          python -m py_compile ceyrl_features.py
