@@ -8,6 +8,7 @@ import httpx
 from fastapi import HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from ceyrl_shield import shield_report, delivery_score, VALID_METHODS
+import ceyrl_ai
 
 TM_EVENTS="https://app.ticketmaster.com/discovery/v2/events.json"
 TM_ONE="https://app.ticketmaster.com/discovery/v2/events/"
@@ -31,6 +32,8 @@ class RadarWatchInput(BaseModel):
 class CopilotInput(BaseModel):
     question: str = Field(min_length=2,max_length=500)
     use_ai: bool = False
+    web_search: bool = False
+    include_inventory: bool = False
 
 
 def ensure_schema(db):
@@ -99,7 +102,7 @@ def call_tm(key,params,one_id=None):
     except (httpx.HTTPError,ValueError,TypeError):
         raise HTTPException(502,"Could not retrieve Ticketmaster events. Check API connectivity.")
 
-def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log):
+def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth_db):
     def get_key(user,path):
         with connection(path,True) as db:
             ensure_schema(db)
@@ -319,9 +322,34 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log):
             log(db,"radar-import","event",cur.lastrowid)
             return {"id":cur.lastrowid,"already_exists":False}
 
+    @app.get("/api/x/copilot/status")
+    def copilot_status(request:Request):
+        user,_=user_db(request)
+        return ceyrl_ai.get_status(user["id"],auth_db,connection)
+
+    @app.get("/api/x/copilot/history")
+    def copilot_history(request:Request):
+        user,path=user_db(request)
+        encrypted=personal_key(user["id"])
+        with connection(path,True) as db:
+            messages=ceyrl_ai.load_chat(db,encrypted,limit=60)
+        return {"messages":messages}
+
+    @app.delete("/api/x/copilot/history")
+    def copilot_clear(request:Request):
+        user,path=user_db(request,True)
+        with connection(path,True) as db:
+            ceyrl_ai.init_chat_db(db)
+            db.execute("DELETE FROM x_ai_messages")
+        return {"ok":True}
+
     @app.post("/api/x/copilot")
     def copilot(payload:CopilotInput,request:Request):
-        _,path=user_db(request,True)
+        user,path=user_db(request,True)
+        if payload.use_ai:
+            return ceyrl_ai.generate(payload.question,user["id"],path,auth_db=auth_db,
+               connection=connection,personal_key=personal_key,
+               web_search=payload.web_search,include_inventory=payload.include_inventory)
         with connection(path,True) as db:
             ensure_schema(db)
             events=db.execute("SELECT COUNT(*) FROM events WHERE archived=0").fetchone()[0]
@@ -350,34 +378,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log):
             answer=f"You currently have {events} saved event(s). Open Event Radar to discover Ticketmaster dates, or My Events to manage your own calendar."
             pages=["radar","events"]
         else:
-            answer=f"Your private workspace has {events} events, {lots} ticket lots, and {sold} sold ticket(s). Ask about sales, PDFs, duplicate seats, event dates or delivery readiness."
+            answer="The offline helper cannot answer general questions or verify current event dates. Connect GPT-5.4 mini and enable web search for a real conversational answer. I can still summarize your local tickets, PDFs or recorded sales."
             pages=["actions","delivery"]
-        if payload.use_ai:
-            token=os.getenv("CTW_OPENAI_API_KEY","").strip()
-            if not token:return {"mode":"local","answer":answer,"pages":pages,"snapshot":snapshot,
-                                  "notice":"Online AI is not configured; showing the private local assistant."}
-            model=os.getenv("CTW_OPENAI_MODEL","gpt-6.2-astra").strip()
-            prompt=("You are Ceyrl, a concise read-only ticket operations assistant. Answer in the user's language. "
-                    "You only have these aggregate numbers, not any user's documents or full ticket details. "
-                    "Never invent event dates, promises of platform transfers, exact ticket validity or actions. "
-                    "Do not instruct users to bypass marketplace rules. If an answer requires missing details, explain that. "
-                    "Avoid exposing internal keys.\n\nAggregate counts (no PII): "+json.dumps(snapshot)+
-                    "\n\nUser request: "+payload.question)
-            try:
-                with httpx.Client(timeout=18,follow_redirects=False) as client:
-                    response=client.post("https://api.openai.com/v1/responses",
-                       headers={"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-                       json={"model":model,"input":prompt,"max_output_tokens":400,"store":False})
-                response.raise_for_status()
-                data=response.json()
-                chunks=[c.get("text","") for block in data.get("output",[]) if block.get("type")=="message"
-                        for c in block.get("content",[]) if c.get("type")=="output_text"]
-                if chunks:
-                    return {"mode":"ai","answer":" ".join(chunks)[:4000],"pages":pages,
-                            "notice":"Online AI received your question and anonymous aggregate counts. It did not receive ticket PDFs, email addresses or API keys."}
-            except (httpx.HTTPError,ValueError,TypeError):
-                pass
-            return {"mode":"local","answer":answer,"pages":pages,"snapshot":snapshot,
-                    "notice":"Online AI unavailable. Local private answer displayed."}
         return {"mode":"local","answer":answer,"pages":pages,"snapshot":snapshot,
-                "notice":"Local answer. No personal records were sent to external AI services."}
+                "notice":"Offline rules, not an AI model. No data was sent outside Ceyrl."}
