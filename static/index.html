@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/style.css">
 <link rel="stylesheet" href="/static/v3.css">
 <link rel="stylesheet" href="/static/v4.css">
+<link rel="stylesheet" href="/static/google-login.css">
 <script defer src="/static/app.js"></script>
 </head><body>
 <div id="auth-page" class="auth-page hidden">
@@ -34,6 +35,15 @@
       <div id="setup-code-field" class="hidden"><label for="auth-setup-code">Initial setup code (remote hosting only)</label><input id="auth-setup-code" placeholder="Provided in server environment"></div>
       <button type="submit" class="btn btn-primary btn-block" id="auth-submit">Sign in →</button>
     </form>
+    <div id="google-auth-options" class="google-auth-options hidden">
+      <div class="google-divider"><span>or continue securely with</span></div>
+      <button class="google-login-button" id="google-auth-btn" type="button">
+        <span class="google-gmark" aria-hidden="true">G</span>
+        <span id="google-auth-label">Continue with Google</span>
+        <span class="google-button-arrow" aria-hidden="true">↗</span>
+      </button>
+      <p class="google-login-note">Google access is available only to invited or approved team members. We never access your Gmail inbox.</p>
+    </div>
     <div id="auth-error" class="auth-error hidden"></div>
     <div class="auth-foot">Encrypted tickets <b>•</b> Role-based access <b>•</b> Private workspace</div>
   </section>
