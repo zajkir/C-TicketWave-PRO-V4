@@ -1122,5 +1122,5 @@ from ceyrl_features import install_ceyrl_x
 
 install_ceyrl_x(
     app, user_db=user_db, connection=connection, select=select,
-    personal_key=personal_key, stamp=stamp, log=log
+    personal_key=personal_key, stamp=stamp, log=log, auth_db=AUTH_DB
 )
