@@ -5,7 +5,9 @@
 <link rel="icon" href="/static/logo.png" type="image/png">
 <link rel="stylesheet" href="/static/style.css">
 <link rel="stylesheet" href="/static/ambient.css?v=1">
-<script defer src="/static/app.js?v=ceyrl-ambient-1"></script>
+<link rel="stylesheet" href="/static/v6.css?v=6-1">
+<script defer src="/static/app.js?v=6-1"></script>
+<script defer src="/static/v6.js?v=6-1"></script>
 <title>Ceyrl — Private Ticket Workspace</title>
 </head><body>
 <div class="grain" aria-hidden="true"></div>
@@ -82,7 +84,7 @@
     </div>
     <header class="topbar">
       <div class="topbar-left"><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button><div class="breadcrumb"><span>Workspace</span><span> / </span><strong id="crumb-current">Overview</strong></div></div>
-      <div class="topbar-right"><label class="global-search"><span>⌕</span><input type="search" id="global-search" placeholder="Search inventory…"><kbd>⌘ K</kbd></label><button id="motion-toggle" type="button" class="motion-toggle" aria-pressed="true" title="Pause animated background">✧ <span>Motion on</span></button><div class="private-pill"><i></i> My private data</div><button type="button" id="top-avatar" class="top-avatar" title="My Account">C</button></div>
+      <div class="topbar-right"><label class="global-search"><span>⌕</span><input type="search" id="global-search" readonly aria-label="Open global search" placeholder="Search everything…" title="Open private search"><kbd>Ctrl K</kbd></label><button id="v6-search-trigger" type="button" class="v6-search-trigger" aria-label="Search my events and tickets" title="Search your workspace">⌕</button><button id="motion-toggle" type="button" class="motion-toggle" aria-pressed="true" title="Pause animated background">✧ <span>Motion on</span></button><div class="private-pill"><i></i> My private data</div><button type="button" id="top-avatar" class="top-avatar" title="My Account">C</button></div>
     </header>
     <div id="page-content" class="page-content"></div>
     <footer class="site-footer"><span>© 2026 Ceyrl</span><span>Encrypted files · Independent user data · Private workspace</span></footer>
@@ -90,5 +92,18 @@
 </div>
 
 <div class="modal-backdrop hidden" id="modal-backdrop"><div class="modal-window" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><div><div class="eyebrow">CEYRL / WORKSPACE</div><h2 id="modal-title">Create a record</h2></div><button type="button" id="modal-close" aria-label="Close">×</button></div><form id="modal-form"><div id="modal-fields" class="modal-fields"></div><div class="modal-actions"><button type="button" class="btn subtle" id="modal-cancel">Cancel</button><button class="btn primary" type="submit" id="modal-save">Save changes</button></div></form></div></div>
+<div class="v6-search-dialog hidden" id="v6-search-dialog" aria-hidden="true">
+  <section class="v6-search-window" role="dialog" aria-modal="true" aria-label="Search your private Ceyrl workspace">
+    <div class="v6-search-top">
+      <span class="v6-search-glyph" aria-hidden="true">⌕</span>
+      <input id="v6-search-input" type="search" autocomplete="off" spellcheck="false"
+        placeholder="Search events, seats and listings…" aria-label="Search events and tickets">
+      <button id="v6-search-close" type="button" aria-label="Close search">ESC</button>
+    </div>
+    <div class="v6-search-results" id="v6-search-results" aria-live="polite"></div>
+    <div class="v6-search-footer"><span>Only your private data is searchable</span>
+      <span><kbd>↑</kbd> <kbd>↓</kbd> select · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</span></div>
+  </section>
+</div>
 <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 </body></html>
