@@ -169,6 +169,8 @@ async function magicReviewDraft(id){
     '<div class="mi-form-actions"><button type="submit" class="btn primary" id="mi-import-button">Confirm and create tickets ↗</button>'+
     '<button type="button" class="btn outline" data-mi-dismiss="'+Number(data.id)+'">Dismiss draft</button></div>'+
     '</form>':'')+
+    '<div class="mi-record-controls"><button class="mi-link-button" type="button" data-mi-delete="'+Number(data.id)+'">Delete inbox record</button>'+
+    '<span>Deleting the inbox record does not delete already imported tickets.</span></div>'+
     '<details class="mi-original"><summary>Show original email text (private)</summary><pre>'+
       miEsc(data.body_preview||'No text was available.')+'</pre></details>'+
     '</div>';
@@ -249,7 +251,7 @@ function initMagicInbox(){
     finally{magicInboxView.busy=false}
   });
   root.addEventListener('click',async event=>{
-    const button=event.target.closest('[data-mi-action],[data-mi-review],[data-mi-filter],[data-mi-dismiss]');
+    const button=event.target.closest('[data-mi-action],[data-mi-review],[data-mi-filter],[data-mi-dismiss],[data-mi-delete]');
     if(!button)return;
     try{
       if(button.hasAttribute('data-mi-review')){
@@ -264,6 +266,11 @@ function initMagicInbox(){
         if(!confirm('Dismiss this draft? Staged PDFs will be deleted.'))return;
         await api('/inbox/drafts/'+Number(button.dataset.miDismiss)+'/dismiss',{method:'POST'});
         notify('Draft dismissed.');return renderInbox();
+      }
+      if(button.hasAttribute('data-mi-delete')){
+        if(!confirm('Permanently delete this inbox record? Any already imported ticket will remain untouched.'))return;
+        await api('/inbox/drafts/'+Number(button.dataset.miDelete),{method:'DELETE'});
+        notify('Inbox record deleted.');return renderInbox();
       }
       if(button.dataset.miAction==='paste'){
         if(!root.querySelector('#mi-paste-panel'))magicPasteForm();
