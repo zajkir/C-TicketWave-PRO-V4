@@ -1,66 +1,69 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#07101f"><meta name="description" content="C TicketWave PRO – ticket operations and inventory platform">
-<title>C TicketWave PRO · Workspace</title>
-<link rel="icon" type="image/png" href="/static/logo.png">
+<meta name="theme-color" content="#090e1d"><meta name="description" content="C TicketWave – your own private ticket inventory and sales manager">
+<link rel="icon" href="/static/logo.png" type="image/png">
 <link rel="stylesheet" href="/static/style.css">
-<link rel="stylesheet" href="/static/v3.css">
-<link rel="stylesheet" href="/static/v4.css">
-<link rel="stylesheet" href="/static/google-login.css">
 <script defer src="/static/app.js"></script>
+<title>C TicketWave — Private Ticket Workspace</title>
 </head><body>
-<div id="auth-page" class="auth-page hidden">
-  <div class="auth-glow glow-1"></div><div class="auth-glow glow-2"></div>
-  <section class="auth-info" aria-label="About C TicketWave PRO">
-    <div class="auth-info-logo"><img src="/static/logo.png" alt="" width="50" height="50"><div><strong>C TicketWave</strong><small>PRIVATE OPERATIONS PLATFORM</small></div></div>
-    <div class="auth-info-kicker">ONE SECURE WORKSPACE. TOTAL CLARITY.</div>
-    <h2>Every ticket.<br><span>Perfectly organized.</span></h2>
-    <p>Run your entire ticket operation from one beautifully simple place — inventory, events, listings and sales.</p>
-    <div class="auth-feature-list">
-      <div><span>◈</span><div><strong>Ticket inventory & encrypted PDF vault</strong><small>Every seat and attachment accounted for.</small></div></div>
-      <div><span>↗</span><div><strong>Sales insights that make sense</strong><small>Real profit, fees and costs from your records.</small></div></div>
-      <div><span>✓</span><div><strong>Private access for your whole team</strong><small>Individual logins, roles and an activity trail.</small></div></div>
+<div class="grain" aria-hidden="true"></div>
+<div id="auth-view" class="auth-layout hidden">
+  <section class="auth-aside">
+    <div class="ambient-orb orb-one"></div><div class="ambient-orb orb-two"></div>
+    <div class="auth-aside-inner">
+      <div class="auth-product"><img src="/static/logo.png" width="48" height="48" alt=""><div><strong>C TicketWave</strong><small>PERSONAL TICKET COMMAND CENTER</small></div></div>
+      <div class="auth-intro">
+        <div class="eyebrow"><span class="lit-dot"></span> YOUR PRIVATE WORKSPACE</div>
+        <h1>Every ticket.<br><em>Every detail.</em><br>All yours.</h1>
+        <p>Keep your events, inventory, encrypted PDFs and profits beautifully organized — in a workspace only you can access.</p>
+      </div>
+      <div class="auth-preview">
+        <div class="preview-head"><span><i class="small-dot"></i> Workspace overview</span><span class="mono-tiny">PRIVATE BY DESIGN</span></div>
+        <div class="preview-big"><span>Portfolio performance</span><strong>+€2,480.00 <i>↗</i></strong><small>Illustrative overview</small></div>
+        <div class="preview-bars"><span style="height:24%"></span><span style="height:48%"></span><span style="height:35%"></span><span style="height:67%"></span><span style="height:53%"></span><span style="height:89%"></span><span style="height:75%"></span><span style="height:98%"></span></div>
+      </div>
+      <div class="auth-points"><span>✦ Individual databases</span><span>◈ Encrypted ticket files</span><span>↗ Real sales analytics</span></div>
     </div>
   </section>
-  <section class="auth-card">
-    <div class="auth-logo"><img src="/static/logo.png" alt="C TicketWave logo" width="70" height="70"></div>
-    <div class="auth-brand">C <span>TicketWave</span><em>PRO</em></div>
-    <div class="auth-strap">YOUR INVENTORY. YOUR TEAM. IN CONTROL.</div>
-    <h1 id="auth-title">Welcome back</h1><p id="auth-subtitle">Sign in to your team's secure ticket operations hub.</p>
-    <form id="auth-form" class="form-stack">
-      <div id="auth-name-field" class="hidden"><label for="auth-name">Full name</label><input id="auth-name" autocomplete="name" placeholder="Your name"></div>
-      <div><label for="auth-email">Work email</label><input id="auth-email" type="email" autocomplete="username" required placeholder="you@company.com"></div>
-      <div><label for="auth-password">Password</label><div class="password-wrap"><input id="auth-password" type="password" autocomplete="current-password" required placeholder="Enter your password"><button class="reveal" type="button" aria-label="Toggle password visibility" id="show-password">◉</button></div></div>
-      <div id="setup-code-field" class="hidden"><label for="auth-setup-code">Initial setup code (remote hosting only)</label><input id="auth-setup-code" placeholder="Provided in server environment"></div>
-      <button type="submit" class="btn btn-primary btn-block" id="auth-submit">Sign in →</button>
-    </form>
-    <div id="google-auth-options" class="google-auth-options hidden">
-      <div class="google-divider"><span>or continue securely with</span></div>
-      <button class="google-login-button" id="google-auth-btn" type="button">
-        <span class="google-gmark" aria-hidden="true">G</span>
-        <span id="google-auth-label">Continue with Google</span>
-        <span class="google-button-arrow" aria-hidden="true">↗</span>
-      </button>
-      <p class="google-login-note">Google access is available only to invited or approved team members. We never access your Gmail inbox.</p>
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-badge"><span class="badge-logo">C</span> TICKETWAVE <b>PRO</b></div>
+      <div class="auth-heading"><div class="eyebrow">WELCOME TO YOUR WORKSPACE</div><h2 id="auth-title">Welcome back</h2><p id="auth-description">Sign in to manage your personal ticket portfolio.</p></div>
+      <div id="auth-note" class="auth-note hidden" role="status"></div>
+      <div id="auth-errors" class="auth-errors hidden" role="alert"></div>
+      <form id="auth-form" class="auth-form">
+        <div id="auth-name-row" class="field hidden"><label for="auth-name">Full name</label><input id="auth-name" autocomplete="name" placeholder="Your full name"></div>
+        <div id="auth-email-row" class="field"><label for="auth-email">Email address</label><input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com" required></div>
+        <div id="auth-password-row" class="field"><div class="field-label-line"><label for="auth-password">Password</label><button id="forgot-link" type="button" class="text-link">Forgot password?</button></div><div class="password-box"><input id="auth-password" type="password" autocomplete="current-password" placeholder="Your password" required><button type="button" id="password-toggle" aria-label="Show password">◉</button></div></div>
+        <button class="btn primary full" id="auth-submit" type="submit">Sign in <span>↗</span></button>
+      </form>
+      <div id="auth-google" class="auth-google hidden"><div class="auth-or"><span>OR</span></div><button type="button" id="google-button" class="google-btn"><span class="google-symbol">G</span> Continue with Google <span>↗</span></button></div>
+      <div id="auth-switch" class="auth-switch">New to TicketWave? <button id="switch-auth" type="button">Create an account</button></div>
+      <div class="auth-footnote"><span class="lock-badge">♢</span> Your account, event records and PDFs are private and never shared with other members.</div>
     </div>
-    <div id="auth-error" class="auth-error hidden"></div>
-    <div class="auth-foot">Encrypted tickets <b>•</b> Role-based access <b>•</b> Private workspace</div>
-  </section>
-  <div class="auth-bottom">© 2026 C TicketWave PRO v4 · Secure ticket operations</div>
+    <div class="auth-footer">© 2026 C TicketWave PRO <span>•</span> Private ticket operations</div>
+  </main>
 </div>
-<div id="app-shell" class="app-shell hidden">
+
+<div id="workspace" class="workspace hidden">
+  <div id="mobile-scrim" class="mobile-scrim hidden"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="brand-line"><img src="/static/logo.png" width="44" height="44" alt="C"><div class="brand-text"><strong>C TicketWave</strong><span>TICKET OPERATIONS</span></div></div>
-    <div class="workspace-line"><div class="workspace-glyph">C</div><div><strong>My Workspace</strong><span>Private team workspace</span></div><span class="workspace-arrow">●</span></div>
-    <nav id="nav" class="sidebar-nav" aria-label="Navigation"></nav>
-    <div class="sidebar-bottom"><div class="connection"><span class="status-dot"></span> SYSTEM ONLINE <span class="version">v4.0</span></div><button type="button" class="user-chip" id="user-chip"><div class="avatar" id="user-avatar">A</div><div><strong id="user-display">Administrator</strong><small id="user-role">Admin</small></div><span class="signout" title="Sign out">↪</span></button></div>
+    <div class="sidebar-logo"><img src="/static/logo.png" alt="C" width="42" height="42"><div><strong>C TicketWave</strong><small>PERSONAL WORKSPACE</small></div><span class="sidebar-beta">PRO</span></div>
+    <div class="workspace-current"><div class="workspace-initial" id="workspace-initial">C</div><div><strong id="workspace-name">My Workspace</strong><small><span class="online-dot"></span> Private & secured</small></div><span class="workspace-chevron">⌄</span></div>
+    <nav id="sidebar-nav" aria-label="Main navigation"></nav>
+    <div class="sidebar-end"><div class="sidebar-security"><span>♧</span><div><strong>Your data. Your control.</strong><small>Only you can see your tickets.</small></div></div><button id="sidebar-account" class="sidebar-user" type="button"><span id="sidebar-avatar">C</span><span><strong id="sidebar-username">Account</strong><small id="sidebar-email">Private account</small></span><span>⋯</span></button></div>
   </aside>
-  <div class="main-area">
-    <header class="topbar"><button id="menu-toggle" class="icon-btn mobile-menu" aria-label="Toggle menu">☰</button><div id="crumb" class="crumb">Workspace / Overview</div><div class="top-actions"><div class="top-pill"><span class="live-pin"></span> Workspace secure</div><label class="top-search" title="Search ticket inventory (Ctrl+K)"><span aria-hidden="true">⌕</span><input id="global-search" type="search" placeholder="Search tickets, seats, events…" aria-label="Search tickets"/><kbd>Ctrl K</kbd></label><button id="quick-add" class="btn btn-primary btn-sm">＋ Add tickets</button><div class="top-avatar" id="top-avatar">C</div></div></header>
-    <main id="page" class="page" aria-live="polite"></main>
+  <div class="workspace-main">
+    <header class="topbar">
+      <div class="topbar-left"><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button><div class="breadcrumb"><span>Workspace</span><span> / </span><strong id="crumb-current">Overview</strong></div></div>
+      <div class="topbar-right"><label class="global-search"><span>⌕</span><input type="search" id="global-search" placeholder="Search inventory…"><kbd>⌘ K</kbd></label><div class="private-pill"><i></i> My private data</div><button type="button" id="top-avatar" class="top-avatar" title="My Account">C</button></div>
+    </header>
+    <div id="page-content" class="page-content"></div>
+    <footer class="site-footer"><span>© 2026 C TicketWave PRO</span><span>Encrypted files · Independent user data · Private workspace</span></footer>
   </div>
 </div>
-<div id="modal-overlay" class="modal-overlay hidden" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><div><div class="eyebrow">C TICKETWAVE PRO</div><h2 id="modal-title">Create</h2></div><button id="modal-close" type="button" class="icon-btn" aria-label="Close dialog">✕</button></div><form id="modal-form" class="modal-body"></form></div></div>
-<div class="toast-stack" id="toasts" aria-live="polite"></div>
+
+<div class="modal-backdrop hidden" id="modal-backdrop"><div class="modal-window" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><div><div class="eyebrow">C TICKETWAVE / WORKSPACE</div><h2 id="modal-title">Create a record</h2></div><button type="button" id="modal-close" aria-label="Close">×</button></div><form id="modal-form"><div id="modal-fields" class="modal-fields"></div><div class="modal-actions"><button type="button" class="btn subtle" id="modal-cancel">Cancel</button><button class="btn primary" type="submit" id="modal-save">Save changes</button></div></form></div></div>
+<div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 </body></html>

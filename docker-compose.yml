@@ -1,17 +1,12 @@
 services:
   ticketwave:
     build: .
-    restart: unless-stopped
     ports:
       - "127.0.0.1:8765:8765"
-    environment:
-      CTW_DATA_DIR: /app/data
-      CTW_BOOTSTRAP_CODE: ${CTW_BOOTSTRAP_CODE:?Set a strong CTW_BOOTSTRAP_CODE before starting}
-      CTW_SECURE_COOKIES: ${CTW_SECURE_COOKIES:-0}
-      CTW_ALLOWED_ORIGINS: ${CTW_ALLOWED_ORIGINS:-}
-      CTW_PUBLIC_BASE_URL: ${CTW_PUBLIC_BASE_URL:-}
-      TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
+    env_file:
+      - .env
     volumes:
-      - ticketwave_data:/app/data
+      - ticketwave_private:/app/data
+    restart: unless-stopped
 volumes:
-  ticketwave_data:
+  ticketwave_private:

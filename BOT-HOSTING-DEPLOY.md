@@ -1,53 +1,16 @@
-# Deploying C TicketWave PRO V4 on Bot-Hosting.net
+# C TicketWave V5 · Bot-Hosting.net Quick Deploy
 
-This repository contains the FastAPI backend, static frontend, tests, and the Python hosting entrypoint `main.py`.
+1. GitHub repo `zajkir/C-TicketWave-PRO-V4` (the repository name remains V4 for continuity; code version is **V5**), branch `main`.
+2. New **Application → Python** deployment.
+3. Entrypoint: `main.py`, command: `python main.py`. Install dependencies `pip install -r requirements.txt`.
+4. Set `CTW_DATA_DIR=/home/container/data` after checking this is *persistent across restart/redeploy*. The application creates `identity.sqlite3` and the `users/` folder inside it.
+5. Set `CTW_PUBLIC_BASE_URL=https://ACTUAL-PUBLIC-DOMAIN` and `CTW_SECURE_COOKIES=1`.
+6. For **Google signup**, create a Google Cloud Web OAuth client, add callback `https://ACTUAL-PUBLIC-DOMAIN/api/auth/google/callback`, then set secret variables `CTW_GOOGLE_CLIENT_ID` and `CTW_GOOGLE_CLIENT_SECRET`.
+7. For **email/password signup**, set SMTP variables (`CTW_SMTP_HOST`, `CTW_SMTP_PORT`, `CTW_SMTP_TLS`, `CTW_SMTP_FROM`, `CTW_SMTP_USER`, `CTW_SMTP_PASSWORD`) — these are required for production email verification and resets.
+8. Set up HTTPS domain, restart and test `/health`. Ensure `Google` login appears once OAuth is configured.
+9. Register Account A and Account B. Create an event, tickets and a PDF in Account A. Verify Account B sees **no records**.
+10. Configure reliable offsite backups of **all of CTW_DATA_DIR**, including hidden encryption keys.
 
-## Deployment steps
+Never use `CTW_LOCAL_DEV_TOKENS=1` on a public deployment.
 
-1. On Bot-Hosting.net create a separate **Application** deployment (not a Database deployment).
-2. Select the GitHub repository `zajkir/C-TicketWave-PRO-V4`, branch `main`.
-3. Select **Python** runtime.
-4. Install dependencies with `pip install -r requirements.txt` if the provider does not install them automatically.
-5. Select startup file `main.py` or startup command `python main.py`.
-6. Configure Environment / Secrets using your own values:
-   - `CTW_BOOTSTRAP_CODE`: strong random bootstrap code (required to create the first admin over the internet)
-   - `CTW_SECURE_COOKIES=1`: mandatory for HTTPS browser sessions
-   - `CTW_ALLOWED_ORIGINS=https://YOUR-APP-DOMAIN`: exact HTTPS domain of the app
-   - `CTW_PUBLIC_BASE_URL=https://YOUR-APP-DOMAIN`: public app URL
-   - `CTW_DATA_DIR=/home/container/data` or a **confirmed persistent directory** assigned by the provider
-   - `CTW_ENABLE_LEGACY_WATCHLIST=0`
-7. Create/attach an HTTPS domain and start the deployment.
-8. Open `https://YOUR-APP-DOMAIN/health` to check the backend.
-9. Open the app home page and create the initial administrator with the bootstrap code. Invite team members through the built-in interface.
-
-**Never place passwords, encryption keys, live databases or customer PDFs in GitHub or the deployment source.**
-
-## Persistence matters
-
-The app uses SQLite and stores the database, the PDF vault and the encryption key under `CTW_DATA_DIR`. This directory **must survive restarts and redeploys**. Confirm the provider's persistence behavior before any real ticket data is uploaded. Back up **the entire directory**, including hidden files such as `.encryption_key`, to a separate secure location.
-
-Without persistence, your data and stored PDFs may be lost on a redeploy. A free deployment may also require periodic renewal and therefore must not be assumed to run uninterrupted 24/7.
-
-## Runtime
-
-`main.py` listens on `0.0.0.0` and reads `SERVER_PORT`, `PORT`, or `CTW_PORT`; falls back to port 8765. Use only one worker with SQLite.
-
-Health endpoint: `GET /health` → `{"status":"ok"}`.
-
-## Public deployment security
-
-Do not use plain HTTP to log in. Use the provider's TLS termination / HTTPS domain. Enable secure cookies and origin restrictions above. The app is designed for a single trusted team, not multi-tenant SaaS without additional security work. Keep user and document backups offsite.
-
-Ticketmaster or Viagogo listing publication is not required for the inventory app to function. The V4 interface deliberately does not expose the older Find Events / Integrations / Event Watchlist pages, and it does not automatically post to Viagogo.
-
-
-## Optional Google / Gmail login
-
-For team members who want to sign up or sign in using Google, configure in **Environment / Secrets**:
-- `CTW_GOOGLE_CLIENT_ID`: Google Cloud Web Application OAuth client ID
-- `CTW_GOOGLE_CLIENT_SECRET`: Google Cloud OAuth client secret
-- `CTW_PUBLIC_BASE_URL`: your actual public HTTPS application origin
-
-In Google Cloud's **Authorized redirect URIs**, add `https://YOUR-REAL-DOMAIN/api/auth/google/callback`, replacing the example with your live domain. Keep `CTW_SECURE_COOKIES=1`. Restart the deployment after changing environment values. Members can then link Google in **My Account**, or use an administrator invitation to register through Google.
-
-See [GOOGLE-LOGIN-SETUP.md](GOOGLE-LOGIN-SETUP.md). No access to Gmail inbox is requested.
+**Migration:** The V4 workspace database is shared and must NOT be copied directly to V5. V5 creates empty, isolated personal workspaces. Preserve any old files in a separate secure backup; migrate only with explicit per-ticket ownership review.

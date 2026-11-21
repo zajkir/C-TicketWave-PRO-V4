@@ -1,275 +1,338 @@
-/* C TicketWave PRO — vanilla JS frontend. No CDN, no cookies accessed from JS. */
+/* C TicketWave PRO V5 — no CDN, independent authenticated workspace. */
 'use strict';
-const $=(s)=>document.querySelector(s);
-const safe=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmtMoney=(c,code='EUR')=>{try{return new Intl.NumberFormat('en-IE',{style:'currency',currency:code}).format(Number(c||0)/100)}catch(e){return (Number(c||0)/100).toFixed(2)+' '+code}};
-const fmtDate=(d)=>d?new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(d)):'—';
-const nfmt=(n)=>new Intl.NumberFormat('en-GB').format(n||0);
-const escOpt=(v)=>safe(String(v??''));
-const statusBadge=(s)=>{const v=String(s||'').trim().toLowerCase();const type=['available','active','sold','listed','enabled'].includes(v)?'green':['reserved','ready','draft','review','pending'].includes(v)?'yellow':['closed','cancelled','disabled','archived'].includes(v)?'red':'blue';return `<span class="tag tag-${type}">● ${safe(s||'—')}</span>`};
-const state={user:null,csrf:'',page:'dashboard',dashboard:null,events:[],tickets:[],listings:[],sales:[],expenses:[],members:[],query:'',status:'',inviteToken:null,authMode:'login',googleEnabled:false,googleLinked:false};
-const groups=[
- {title:'WORKSPACE',items:[['dashboard','overview','Overview'],['events','calendar','Events']]},
- {title:'INVENTORY',items:[['tickets','ticket','Ticket Inventory'],['listings','tag','Listings']]},
- {title:'FINANCIALS',items:[['sales','chart','Sales & Profit'],['expenses','wallet','Expenses']]},
- {title:'ADMINISTRATION',items:[['team','users','Team Members'],['audit','activity','Activity Log'],['account','shield','My Account']]}
+const $=(selector)=>document.querySelector(selector);
+const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const money=(c,currency='EUR')=>{try{return new Intl.NumberFormat('en-IE',{style:'currency',currency}).format((Number(c)||0)/100)}catch{return (Number(c||0)/100).toFixed(2)+' '+currency}};
+const num=(v)=>new Intl.NumberFormat('en-GB').format(v||0);
+const niceDate=(v)=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(+d)?'—':new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}).format(d)};
+const inputDate=(offset=0)=>{const date=new Date(Date.now()+offset*864e5);return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16)};
+const isoLocal=(s)=>new Date(s).toISOString();
+const statusTag=(text)=>{const s=String(text||'draft').toLowerCase();const cls=s==='listed'||s==='sold'?'green':s==='ready'||s==='available'?'blue':s==='paused'?'gold':s==='cancelled'?'red':'grey';return `<span class="tag ${cls}">● ${escapeHtml(text)}</span>`};
+const app={user:null,csrf:'',authMode:'login',google:false,email:false,page:'overview',events:[],tickets:[],listings:[],sales:[],expenses:[],recaps:[],dashboard:null,search:''};
+const SECTIONS=[
+ {name:'WORKSPACE',items:[['overview','▦','Overview'],['events','▤','My Events']]},
+ {name:'INVENTORY',items:[['tickets','▧','Ticket Inventory'],['listings','◇','Listings']]},
+ {name:'FINANCES',items:[['sales','↗','Sales Tracker'],['expenses','€','Expenses & Costs'],['analytics','◫','Analytics']]},
+ {name:'PERSONAL',items:[['activity','≡','Activity Log'],['settings','♙','My Account']]}
 ];
-const icons={
- overview:'<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/>',
- calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
- ticket:'<path d="M2 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v3Z"/><path d="M13 5v2m0 3v2m0 3v2m0 3v1"/>',
- tag:'<path d="m20 13-7 7a2 2 0 0 1-3 0l-8-8V3h9l9 8a2 2 0 0 1 0 2Z"/><circle cx="7.5" cy="7.5" r="1"/>',
- chart:'<path d="M3 3v18h18M7 16l5-5 3 3 6-8"/>',
- wallet:'<rect x="2" y="5" width="20" height="16" rx="3"/><path d="M2 9h20M16 14h3"/>',
- users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
- activity:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
- search:'<circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/>',
- arrow:'<path d="M5 12h14m-6-6 6 6-6 6"/>',
- spark:'<path d="m12 3 1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9L12 3Z"/>',
- shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>'
-};
-function svg(name,size=18){return `<svg class="ui-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.ticket}</svg>`}
-const minRoles={team:2,audit:2};
-const can=(role)=>({viewer:0,operator:1,manager:2,admin:3}[state.user?.role]||0)>=({viewer:0,operator:1,manager:2,admin:3}[role]||0);
-async function api(path,options={}){
- const opts={credentials:'same-origin',...options};
- if(opts.body && !(opts.body instanceof FormData) && typeof opts.body!=='string')opts.body=JSON.stringify(opts.body);
- if(opts.body && !(opts.body instanceof FormData))opts.headers={'Content-Type':'application/json',...(opts.headers||{})};
- if(opts.method && !['GET','HEAD'].includes(opts.method.toUpperCase()))opts.headers={'X-CSRF-Token':state.csrf,...(opts.headers||{})};
- const r=await fetch('/api'+path,opts);const raw=await r.text();let payload;try{payload=raw?JSON.parse(raw):{}}catch(e){payload={detail:raw||r.statusText}};
- if(!r.ok){if(r.status===401){showAuth('login');state.user=null}throw Error(Array.isArray(payload.detail)?payload.detail.map(x=>x.msg).join('; '):(payload.detail||'Request failed'))}
- return payload;
+async function api(path,opts={}){
+ const options={credentials:'same-origin',...opts};
+ if(options.body&&!(options.body instanceof FormData)&&typeof options.body!=='string'){
+  options.body=JSON.stringify(options.body);
+  options.headers={...(options.headers||{}),'Content-Type':'application/json'};
+ }
+ if(options.method&&options.method.toUpperCase()!=='GET'){
+  options.headers={...(options.headers||{}),'x-csrf-token':app.csrf};
+ }
+ const response=await fetch('/api'+path,options);
+ const raw=await response.text();let data;
+ try{data=raw?JSON.parse(raw):{}}catch{data={detail:raw.slice(0,250)}}
+ if(!response.ok){if(response.status===401&&app.user){app.user=null;showAuth('login')}
+  throw Error(typeof data.detail==='string'?data.detail:'Request failed ('+response.status+').')}
+ return data;
 }
-function toast(msg,error=false){const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=msg;$('#toasts').append(el);setTimeout(()=>el.remove(),4800)}
-function pageTitle(title,description,actions=''){return `<div class="page-top"><div><div class="eyebrow">C TICKETWAVE / WORKSPACE</div><h1>${title}</h1><p>${description}</p></div><div class="page-actions">${actions}</div></div>`}
-function btn(label,act,style='primary'){return `<button class="btn btn-${style}" type="button" data-act="${act}">${label}</button>`}
-function panel(title,subtitle,body='',extra='',cls=''){return `<section class="panel ${cls}"><div class="panel-head"><div><h2>${title}</h2><p>${subtitle}</p></div>${extra}</div>${body}</section>`}
-function empty(icon,title,desc,button=''){return `<div class="empty"><div class="empty-symbol">${icon}</div><strong>${title}</strong><p>${desc}</p>${button}</div>`}
-function table(headers,rows,emptyState){return rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr>${headers.map(s=>`<th>${s}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:(emptyState||empty('◈','Nothing here yet','Your first records will appear here.'))}
-function metric(label,val,icon,foot){return `<div class="metric"><div class="metric-head"><span>${label}</span><span class="metric-icon">${icon}</span></div><div class="metric-val">${val}</div><div class="metric-foot">${foot}</div></div>`}
-function friendlyError(error){toast(error?.message||String(error),true)}
-function setPage(name,searchQuery=''){window.scrollTo(0,0);if(!groups.flatMap(g=>g.items).some(x=>x[0]===name))name='dashboard';state.page=name;state.query=searchQuery;state.status='';$('#sidebar').classList.remove('open');$('#nav').querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===name));$('#crumb').textContent=groups.flatMap(g=>g.items).find(x=>x[0]===name)?.[2]||'Overview';history.replaceState(null,'','#'+name);renderPage().catch(friendlyError)}
-function nav(){const groupsAllowed=groups.map(g=>({...g,items:g.items.filter(x=>minRoles[x[0]]===undefined || ({viewer:0,operator:1,manager:2,admin:3}[state.user?.role]||0)>=minRoles[x[0]])}));$('#nav').innerHTML=groupsAllowed.map(g=>`<div class="nav-group">${g.title}</div>${g.items.map(([key,icon,label])=>`<button class="nav-item ${state.page===key?'active':''}" data-page="${key}"><span class="nav-icon">${svg(icon,18)}</span><span>${label}</span>${state.page===key?'<span class="active-mark"></span>':''}</button>`).join('')}`).join('')}
-function showAuth(mode){state.authMode=mode;$('#auth-page').classList.remove('hidden');$('#app-shell').classList.add('hidden');const setup=mode==='setup',invite=mode==='invite',reset=mode==='reset';$('#auth-title').textContent=setup?'Create your workspace':invite?'Accept your invitation':reset?'Reset your password':'Welcome back';$('#auth-subtitle').textContent=setup?'Set up the first administrator for your private workspace.':invite?'Create your secure team account and join the workspace.':reset?'Choose a new strong password using your one-time reset link.':'Sign in to your team’s secure ticket operations hub.';$('#auth-name-field').classList.toggle('hidden',!setup&&!invite);$('#setup-code-field').classList.toggle('hidden',!setup);$('#auth-submit').textContent=setup?'Create workspace →':invite?'Accept invite →':reset?'Reset password →':'Sign in →';$('#auth-password').setAttribute('autocomplete',setup||invite||reset?'new-password':'current-password');$('#auth-error').classList.add('hidden');$('#google-auth-options').classList.toggle('hidden',!state.googleEnabled||setup||reset);$('#google-auth-label').textContent=invite?'Register with Google':'Continue with Google';if(setup||invite||reset){$('#auth-password').setAttribute('minlength','12');$('#auth-password').placeholder='12+ characters, letters and numbers'}else{$('#auth-password').removeAttribute('minlength');$('#auth-password').placeholder='Enter your password'}if(invite||reset){const p=new URLSearchParams(location.search);$('#auth-email').value=p.get('email')||'';}}
-function showApp(){state.user&&($('#user-display').textContent=state.user.name,$('#user-role').textContent=state.user.role,$('#user-avatar').textContent=state.user.name[0]?.toUpperCase()||'C');$('#auth-page').classList.add('hidden');$('#app-shell').classList.remove('hidden');nav();let requested=(location.hash||'#dashboard').slice(1);if(minRoles[requested]&&!can('manager'))requested='dashboard';setPage(requested)}
-async function boot(){try{const data=await api('/auth/state');state.googleEnabled=Boolean(data.google_enabled);state.googleLinked=Boolean(data.google_linked);if(data.authenticated){state.user=data.user;state.csrf=data.csrf;showApp()}else if(data.setup_required){showAuth('setup')}else if(new URLSearchParams(location.search).has('invite')){showAuth('invite')}else if(new URLSearchParams(location.search).has('reset')){showAuth('reset')}else{showAuth('login')}const q=new URLSearchParams(location.search);if(q.has('google_error')){$('#auth-error').textContent='Google sign-in was not completed ('+String(q.get('google_error')).replace(/[^a-z0-9-]/g,'')+'). Please check your invitation or linked account.';$('#auth-error').classList.remove('hidden');history.replaceState(null,'',location.pathname+location.hash)}else if(q.has('google')){toast(q.get('google')==='linked'?'Google account connected successfully.':'Welcome! Signed in with Google.');history.replaceState(null,'',location.pathname+location.hash)}}catch(e){showAuth('login');friendlyError(e)}}
-$('#auth-form').addEventListener('submit',async e=>{e.preventDefault();const form={email:$('#auth-email').value.trim(),password:$('#auth-password').value};if(state.authMode!=='login'){form.name=$('#auth-name').value.trim()||'';}if(state.authMode==='setup')form.setup_code=$('#auth-setup-code').value;if(state.authMode==='invite')form.token=new URLSearchParams(location.search).get('invite')||'';if(state.authMode==='reset'){form.new_password=form.password;delete form.password;form.token=new URLSearchParams(location.search).get('reset')||''}try{const r=await api('/auth/'+(state.authMode==='setup'?'bootstrap':state.authMode==='invite'?'invite':state.authMode==='reset'?'reset-password':'login'),{method:'POST',body:form});if(state.authMode==='reset'){history.replaceState(null,'',location.pathname);$('#auth-password').value='';showAuth('login');toast('Password changed. Sign in with your new password.');return}state.csrf=r.csrf;history.replaceState(null,'',location.pathname);const me=await api('/auth/state');state.user=me.user;state.csrf=me.csrf;showApp();toast('Signed in successfully')}catch(err){$('#auth-error').textContent=err.message;$('#auth-error').classList.remove('hidden')}});
-$('#google-auth-btn').addEventListener('click',()=>{const q=new URLSearchParams(location.search);const token=state.authMode==='invite'?q.get('invite'):null;const url=token?('/api/auth/google/start?mode=invite&invite='+encodeURIComponent(token)):'/api/auth/google/start?mode=login';location.assign(url)});
-$('#show-password').addEventListener('click',()=>{$('#auth-password').type=$('#auth-password').type==='password'?'text':'password'});
-$('#nav').addEventListener('click',e=>{const target=e.target.closest('[data-page]');if(target)setPage(target.dataset.page)});
-$('#menu-toggle').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
-$('#quick-add').addEventListener('click',async()=>{try{if(!state.events.length)state.events=await api('/events');if(!state.events.length){newEvent();return;}await newTicket()}catch(error){friendlyError(error)}});
-const globalSearch=$('#global-search');
-if(globalSearch){
- globalSearch.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){
-   const q=globalSearch.value.trim();
-   if(!q)return;
-   e.preventDefault();setPage('tickets',q);globalSearch.value='';
+function notify(message,error=false){const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=message;$('#toast-stack').appendChild(el);setTimeout(()=>el.remove(),4800)}
+function notifyError(error){notify(error?.message||String(error),true)}
+function toggle(selector,show){$(selector).classList.toggle('hidden',!show)}
+function heading(title,subtitle,actions=''){return `<div class="page-heading"><div><div class="eyebrow">C TICKETWAVE / PRIVATE WORKSPACE</div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div><div class="heading-actions">${actions}</div></div>`}
+function button(label,action,style='primary'){return `<button type="button" class="btn ${style}" data-action="${escapeHtml(action)}">${label}</button>`}
+function card(title,subtitle,body,action=''){return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2><p>${subtitle}</p></div>${action}</div>${body}</section>`}
+function table(columns,rows,emptyMsg='No records yet'){return rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr>${columns.map(s=>`<th>${s}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:empty('◈',emptyMsg,'Create your first record to get started.');}
+function empty(icon,title,desc,action=''){return `<div class="empty-state"><div class="empty-icon">${icon}</div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(desc)}</p>${action}</div>`}
+function kpi(title,value,icon,subtitle,cls=''){return `<div class="kpi"><div class="kpi-top"><span>${title}</span><span class="kpi-symbol">${icon}</span></div><div class="kpi-value ${cls}">${value}</div><div class="kpi-sub">${subtitle}</div></div>`}
+function hrefButton(text,action){return `<button class="panel-link" type="button" data-action="${escapeHtml(action)}">${text} ↗</button>`}
+function isVisible(){return !!app.user}
+
+function showAuth(mode){
+ app.authMode=mode;toggle('#auth-view',true);toggle('#workspace',false);
+ const meta={
+  login:['Welcome back','Sign in to manage your personal ticket portfolio.','Sign in →'],
+  register:['Create your account','Start your private ticket workspace. Your data belongs only to you.','Create my account →'],
+  forgot:['Recover your account','Enter your email to request a password reset link.','Send recovery link →'],
+  reset:['Set a new password','Choose a strong password to secure your personal workspace.','Update password →']
+ }[mode]||['Welcome back','Sign in to continue.','Sign in →'];
+ $('#auth-title').textContent=meta[0];$('#auth-description').textContent=meta[1];$('#auth-submit').innerHTML=meta[2];
+ toggle('#auth-name-row',mode==='register');toggle('#auth-email-row',mode!=='reset');toggle('#auth-password-row',mode!=='forgot');
+ $('#auth-email').required=mode!=='reset';$('#auth-name').required=mode==='register';$('#auth-password').required=mode!=='forgot';
+ $('#forgot-link').classList.toggle('hidden',mode!=='login');
+ toggle('#auth-google',app.google&&(mode==='login'||mode==='register'));
+ $('#google-button').innerHTML=`<span class="google-symbol">G</span> ${mode==='register'?'Sign up with Google':'Continue with Google'} <span>↗</span>`;
+ $('#auth-switch').innerHTML=mode==='login'?'New to TicketWave? <button type="button" id="switch-auth">Create an account</button>':
+  'Already have an account? <button type="button" id="switch-auth">Back to sign in</button>';
+ $('#switch-auth').addEventListener('click',()=>showAuth(mode==='login'?'register':'login'));
+ $('#auth-password').setAttribute('autocomplete',mode==='login'?'current-password':'new-password');
+ toggle('#auth-errors',false);toggle('#auth-note',false);
+}
+function authError(message,good=false){const el=$(good?'#auth-note':'#auth-errors');el.textContent=message;el.classList.remove('hidden')}
+async function authSubmit(e){
+ e.preventDefault();toggle('#auth-errors',false);toggle('#auth-note',false);
+ const email=$('#auth-email').value.trim(),password=$('#auth-password').value,name=$('#auth-name').value.trim();
+ const button=$('#auth-submit');button.disabled=true;
+ try{
+  if(app.authMode==='login'){
+   const response=await api('/auth/login',{method:'POST',body:{email,password}});
+   app.csrf=response.csrf;await loadAuthState();notify('Welcome back. Your private workspace is ready.');
+  }else if(app.authMode==='register'){
+   const response=await api('/auth/register',{method:'POST',body:{name,email,password}});
+   if(response.dev_verification_token){await api('/auth/verify',{method:'POST',body:{token:response.dev_verification_token}});showAuth('login');authError('Development account verified. Please sign in.',true)}
+   else authError(response.message||'Check your inbox to verify your email.',true);
+  }else if(app.authMode==='forgot'){
+   const response=await api('/auth/forgot',{method:'POST',body:{email}});authError(response.message||'If eligible, a recovery email has been sent.',true);
+  }else if(app.authMode==='reset'){
+   const token=new URLSearchParams(location.search).get('reset')||'';
+   await api('/auth/reset',{method:'POST',body:{token,password}});history.replaceState(null,'',location.pathname);showAuth('login');authError('Password reset. Sign in with your new password.',true);
   }
- });
+ }catch(err){authError(err.message)}finally{button.disabled=false}
 }
-window.addEventListener('keydown',e=>{
- if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){
-  e.preventDefault();globalSearch?.focus();globalSearch?.select();
- }
-});
-
-$('#user-chip').addEventListener('click',async()=>{if(!confirm('Sign out of C TicketWave PRO?'))return;try{await api('/auth/logout',{method:'POST'});state.user=null;state.csrf='';showAuth('login');toast('Signed out')}catch(e){friendlyError(e)}});
-function parseForm(form){const result={};new FormData(form).forEach((val,key)=>{result[key]=typeof val==='string'?val.trim():val});return result}
-function field({name,label,type='text',value='',placeholder='',required=false,options=[],wide=false,help='',min,max,step}){const id='f-'+name;const extra=(required?' required':'')+(min!==undefined?` min="${safe(min)}"`:'')+(max!==undefined?` max="${safe(max)}"`:'')+(step!==undefined?` step="${safe(step)}"`:'');let control=type==='select'?`<select id="${id}" name="${name}"${extra}>${options.map(o=>`<option value="${safe(o.value)}" ${String(value)===String(o.value)?'selected':''}>${safe(o.label)}</option>`).join('')}</select>`:type==='textarea'?`<textarea id="${id}" name="${name}" placeholder="${safe(placeholder)}" ${required?'required':''}>${safe(value)}</textarea>`:`<input id="${id}" name="${name}" type="${type}" value="${safe(value)}" placeholder="${safe(placeholder)}" ${extra}>`;return `<div class="field ${wide?'field-wide':''}"><label for="${id}">${safe(label)}</label>${control}${help?`<small>${safe(help)}</small>`:''}</div>`}
-function openModal(title,fields,submit,{note='',label='Save changes'}={}){$('#modal-title').textContent=title;$('#modal-form').innerHTML=`${note?`<div class="info-box field-wide" style="margin-bottom:18px">${note}</div>`:''}<div class="fields">${fields.map(field).join('')}</div><div class="modal-footer"><button type="button" class="btn btn-ghost" data-modal-close>Cancel</button><button type="submit" class="btn btn-primary">${label}</button></div>`;$('#modal-overlay').classList.remove('hidden');$('#modal-form').onsubmit=async e=>{e.preventDefault();const b=$('#modal-form button[type=submit]');b.disabled=true;b.textContent='Saving…';try{await submit(parseForm(e.target));closeModal();await renderPage()}catch(error){friendlyError(error);b.disabled=false;b.textContent=label}};$('#modal-form').querySelector('input,select,textarea')?.focus()}
-function closeModal(){$('#modal-overlay').classList.add('hidden');$('#modal-form').onsubmit=null}
-$('#modal-overlay').addEventListener('click',e=>{if(e.target.id==='modal-overlay'||e.target.closest('[data-modal-close]'))closeModal()});$('#modal-close').addEventListener('click',closeModal);
-function eventOptions(){return state.events.filter(e=>!e.archived).map(e=>({value:e.id,label:`${e.title} — ${e.city} · ${new Date(e.starts_at).toLocaleDateString('en-GB')}`}))}
-function ticketOptions(){return state.tickets.filter(t=>t.status==='available'&&t.quantity>t.sold_quantity).map(t=>({value:t.id,label:`#${t.id} ${t.event_title} · ${t.section||'General'} · ${t.quantity-t.sold_quantity} left`}))}
-function pageAction(action,handler){window.actions[action]=handler}
-window.actions={};
-$('#page').addEventListener('click',async e=>{const route=e.target.closest('[data-page]');if(route){setPage(route.dataset.page);return;}const el=e.target.closest('[data-act]');if(!el)return;const key=el.dataset.act;const handler=window.actions[key];if(handler)try{await handler(el)}catch(err){friendlyError(err)}});
-async function renderPage(){const p=state.page;$('#page').innerHTML=`<div class="inline-empty">Loading your workspace…</div>`;switch(p){case'dashboard':return renderDashboard();case'events':return renderEvents();case'tickets':return renderTickets();case'listings':return renderListings();case'sales':return renderSales();case'expenses':return renderExpenses();case'team':return renderTeam();case'audit':return renderAudit();case'account':return renderAccount();default:setPage('dashboard')}}
-async function renderDashboard(){
- const [d,insights]=await Promise.all([api('/dashboard'),api('/insights')]);state.dashboard=d;state.insights=insights;
- const sales=insights.monthly_sales||[];const maxRevenue=Math.max(1,...sales.map(x=>x.revenue_cents||0));
- const trend=sales.length?`<div class="sales-trend">${sales.map(x=>`<div class="trend-col" title="${safe(x.month)} · ${fmtMoney(x.revenue_cents)}"><span class="trend-value">${fmtMoney(x.revenue_cents)}</span><div class="trend-bar" style="height:${Math.max(9,Math.round(x.revenue_cents/maxRevenue*100))}%"></div><small>${safe(x.month.slice(5))}/${safe(x.month.slice(2,4))}</small></div>`).join('')}</div>`:empty('↗','Your sales chart starts here','Record your first sale to see the revenue trend.');
- const best=insights.top_events||[];
- $('#page').innerHTML=`
- <section class="hero-v3"><div class="hero-copy"><div class="eyebrow">C TICKETWAVE / OVERVIEW · LIVE DATA</div><h1>Everything about your tickets.<br><span>In one beautiful workspace.</span></h1><p>Your inventory, event calendar, profits and team activity — organized around the work that matters.</p><div class="hero-actions">${can('operator')?(d.events?btn('＋ Add tickets','new-ticket'):btn('＋ Create first event','new-event')):''}${btn('Explore sales ↗','go-sales','ghost')}</div></div><div class="hero-art"><div class="hero-orb"><img src="/static/logo.png" alt="C TicketWave" /></div><div class="hero-small-card"><span>● LIVE WORKSPACE</span><b>${nfmt(d.events)} events</b><small>${nfmt(d.tickets_available)} tickets available</small></div></div></section>
- <div class="section-title-row"><div><div class="eyebrow">AT A GLANCE</div><h2>Business overview</h2></div><span class="timestamp-label">Financial amounts in EUR · Data from your database</span></div>
- <div class="metric-grid v3-kpis">${metric('Net profit',fmtMoney(d.gross_profit_cents),'↗','Revenue − sold costs − fees − expenses')}${metric('Sales revenue',fmtMoney(d.sales_revenue_cents),'€','Confirmed EUR transactions')}${metric('Available tickets',nfmt(d.tickets_available),'◈',`${nfmt(d.tickets_total)} units in inventory`)}${metric('Live listings',nfmt(d.listing_status?.listed||0),'▤','Manually marked / linked listings')}</div>
- <div class="dashboard-grid v3-dash-grid">${panel('Revenue trend','Revenue by month · real recorded EUR sales',`<div class="panel-body"><div class="trend-total"><span>Recorded gross revenue</span><strong>${fmtMoney(d.sales_revenue_cents)}</strong></div>${trend}</div>`,`<button class="table-action" data-page="sales">View sales ↗</button>`)}${panel('Top performing events','Based on net profit from EUR transactions',`<div class="panel-body top-events">${best.length?best.slice(0,4).map((e,i)=>`<button class="performance-row" data-page="sales"><span class="rank-no">0${i+1}</span><span class="perf-event"><strong>${safe(e.title)}</strong><small>${nfmt(e.sold)} tickets sold · ${safe(e.city)}</small></span><span class="perf-money ${e.net_profit_cents>=0?'positive':'negative'}">${fmtMoney(e.net_profit_cents)}<small>ROI ${e.roi_pct===null?'—':e.roi_pct+'%'}</small></span><span class="perf-arrow">↗</span></button>`).join(''):empty('▤','No sales yet','Record your first sale to start tracking your profitability.')}</div>`)}</div>
- <div class="dashboard-grid v3-dash-grid bottom-panels">${panel('Upcoming events','Your next dates and remaining inventory',d.upcoming.length?table(['Event','Date','Available',''],d.upcoming.map(e=>`<tr><td><strong class="table-name">${safe(e.title)}</strong><div class="table-sub">${safe(e.city)} · ${safe(e.venue)}</div></td><td>${fmtDate(e.starts_at)}</td><td>${nfmt(e.remaining)}</td><td><button class="table-action" data-page="sales">View sales ↗</button></td></tr>`)):empty('▦','No upcoming events','Create an event to start tracking your tickets.'))}${panel('Recent team activity','Recorded changes across your workspace',`<div class="panel-body">${d.activity.length?d.activity.slice(0,6).map(a=>`<div class="activity-line"><span class="activity-ico">↗</span><div class="activity-details"><b>${safe(a.action.replaceAll('.',' · '))}</b><small>${safe(a.actor||'System')} · ${fmtDate(a.created_at)}</small></div></div>`).join(''):empty('◷','Activity starts here','Your actions are securely recorded.')}</div>`)}</div>`;
-
+async function loadAuthState(){
+ const data=await api('/auth/state');app.google=!!data.google_enabled;app.email=!!data.email_enabled;
+ if(data.authenticated){app.user=data.user;app.csrf=data.csrf;showWorkspace();return}
+ app.user=null;app.csrf='';const q=new URLSearchParams(location.search);
+ if(q.has('verify')){
+  try{await api('/auth/verify',{method:'POST',body:{token:q.get('verify')}});history.replaceState(null,'',location.pathname);showAuth('login');authError('Email verified. Welcome! You can now sign in.',true)}
+  catch(err){history.replaceState(null,'',location.pathname);showAuth('login');authError(err.message)}
+ }else if(q.has('reset'))showAuth('reset');
+ else if(q.has('google_error')){showAuth('login');authError('Google login could not finish ('+q.get('google_error')+'). Check your account and try again.');history.replaceState(null,'',location.pathname)}
+ else showAuth('login');
+ if(q.has('google')&&!q.has('google_error')){notify('Google account connected successfully.');history.replaceState(null,'',location.pathname+location.hash)}
 }
-async function renderEvents(){state.events=await api('/events');const list=state.events;$('#page').innerHTML=pageTitle('Events','Manage venues, event dates and inventory across upcoming and past shows.',can('operator')?btn('＋ Add event','new-event'):'')+`<div class="grid grid-3">${list.slice(0,9).map(e=>`<article class="event-card"><div class="event-date">${fmtDate(e.starts_at).toUpperCase()}</div><h3>${safe(e.title)}</h3><p>⌖ ${safe(e.venue)} · ${safe(e.city)}, ${safe(e.country)}</p><div class="event-footer"><span>◈ ${nfmt(e.remaining)} unsold tickets</span><span>${safe(e.category)}</span></div></article>`).join('')||empty('▦','No events yet','Create your first event to organize tickets and sales.')}</div><div style="margin-top:22px">${panel('All events',`${list.length} events in this workspace`,table(['Event','Location','Date','Ticket lots','Remaining','Source'],list.map(e=>`<tr><td><div class="table-name">${safe(e.title)}</div><div class="table-sub">${safe(e.category)}</div></td><td>${safe(e.city)} · ${safe(e.country)}</td><td>${fmtDate(e.starts_at)}</td><td>${e.lots}</td><td>${e.remaining}</td><td><span class="source-badge">${safe(e.external_source||'Manual')}</span></td></tr>`),empty('▦','No events available','Use Add event to create your first record.')))}</div>`}
-function newEvent(){if(!can('operator'))return toast('You need Operator access.',true);openModal('Create a new event',[{name:'title',label:'Event / performer name',required:true,placeholder:'e.g. The Weeknd – European Tour',wide:true},{name:'starts_at',label:'Event date and time',type:'datetime-local',required:true,help:'Uses your local timezone'},{name:'category',label:'Event category',type:'select',options:['Concert','Sports','Festival','Theatre','Other'].map(x=>({value:x,label:x}))},{name:'venue',label:'Venue name',required:true,placeholder:'O2 Arena'},{name:'city',label:'City',required:true,placeholder:'Prague'},{name:'country',label:'Country',required:true,placeholder:'Czechia'}],async d=>{d.starts_at=new Date(d.starts_at).toISOString();await api('/events',{method:'POST',body:d});toast('Event added successfully')},{label:'Create event'})}
-async function newTicket(){if(!can('operator'))return toast('You need Operator access.',true);if(!state.events.length)state.events=await api('/events');if(!state.events.length)return toast('Create an event before adding tickets.',true);openModal('Add tickets to inventory',[
-{name:'event_id',label:'Event',type:'select',options:eventOptions(),required:true,wide:true},
-{name:'quantity',label:'Quantity',type:'number',value:1,min:1,max:100,required:true},
-{name:'type',label:'Delivery type',type:'select',options:['E-Ticket','Mobile Transfer','Digital','Paper'].map(x=>({value:x,label:x}))},
-{name:'section',label:'Section',placeholder:'e.g. 421'},
-{name:'row_label',label:'Row',placeholder:'e.g. 15'},
-{name:'seats',label:'Seats',placeholder:'e.g. 12,13,14,15'},
-{name:'source',label:'Original platform',placeholder:'e.g. Ticketmaster'},
-{name:'cost',label:'Purchase cost (per ticket)',type:'number',step:'.01',min:0,value:'0'},
-{name:'face',label:'Face value (per ticket)',type:'number',step:'.01',min:0,value:'0'},
-{name:'currency_code',label:'Currency',type:'select',options:['EUR','CZK','USD','GBP','PLN','CHF'].map(x=>({value:x,label:x}))},
-{name:'file',label:'Upload ticket PDF (optional, max 20 MB)',type:'file',wide:true,help:'Stored encrypted on the server. Do not publish QR or barcode images.'},
-{name:'notes',label:'Internal notes',type:'textarea',wide:true}],async d=>{const form=new FormData();Object.entries(d).forEach(([k,v])=>{if(k==='file'&&(!v||!v.name))return;form.append(k,v)});await api('/tickets',{method:'POST',body:form});toast('Ticket lot saved securely')},{note:'Your PDFs are encrypted at rest. All members of your trusted workspace can access the inventory; access is controlled by account roles.',label:'Save ticket lot'})}
-function ticketRow(t){
- return `<tr>
-   <td><div class="table-name">#${t.id} · ${safe(t.event_title)}</div><div class="table-sub">${fmtDate(t.starts_at)}</div></td>
-   <td>${safe(t.section||'General')} · ${safe(t.row_label||'—')}<div class="table-sub">${safe(t.seats||'Unassigned')}</div></td>
-   <td><strong>${nfmt(Math.max(0,t.quantity-t.sold_quantity))}</strong> / ${nfmt(t.quantity)}</td>
-   <td>${fmtMoney(t.cost_cents,t.currency)}</td>
-   <td>${statusBadge(t.status)}</td>
-   <td>${statusBadge(t.listing_status||'Not listed')}</td>
-   <td>${t.stored_filename?`<button class="table-action" data-act="pdf-${t.id}">↓ PDF</button>`:'—'}</td>
-   <td><div class="inline-actions">${can('operator')&&t.status==='available'&&t.quantity>t.sold_quantity?`<button class="table-action" data-act="ticket-list-${t.id}">List</button><button class="table-action" data-act="ticket-sell-${t.id}">Sell</button><button class="table-action" data-act="ticket-reserve-${t.id}">Reserve</button>`:''}${can('operator')&&t.status==='reserved'?`<button class="table-action" data-act="ticket-release-${t.id}">Release</button>`:''}</div></td>
- </tr>`;
+function showWorkspace(){toggle('#auth-view',false);toggle('#workspace',true);const name=app.user.display_name||app.user.email;
+ $('#workspace-name').textContent='My Personal Space';$('#sidebar-username').textContent=name;$('#sidebar-email').textContent=app.user.email;
+ const initial=name.charAt(0).toUpperCase();$('#sidebar-avatar').textContent=initial;$('#top-avatar').textContent=initial;$('#workspace-initial').textContent=initial;
+ drawNav();navigate((location.hash||'#overview').slice(1));
 }
-function filterInventory(){
- const q=state.query.trim().toLowerCase();
- const matched=state.tickets.filter(t=>(!state.status||state.status===t.status)&&[
-   t.event_title,t.section,t.row_label,t.source,t.seats,t.id,t.currency
- ].join(' ').toLowerCase().includes(q));
- const wrap=$('#inventory-table-holder');
- if(wrap)wrap.innerHTML=table(
-   ['Ticket / Event','Section & Seats','Available','Cost / unit','Status','Listing','PDF','Actions'],
-   matched.map(ticketRow),
-   empty('◈',state.query||state.status?'No matching tickets':'No tickets yet',
-     state.query||state.status?'Try a different search term or status filter.':'Create a ticket lot to start tracking your inventory.')
- );
- if($('#inventory-result-count'))$('#inventory-result-count').textContent=nfmt(matched.length)+' matching lots';
+function drawNav(){$('#sidebar-nav').innerHTML=SECTIONS.map(g=>`<div class="nav-group">${g.name}</div>${g.items.map(([id,icon,label])=>`<button type="button" data-page="${id}" class="nav-item ${id===app.page?'active':''}"><span class="nav-icon">${icon}</span>${label}</button>`).join('')}`).join('')}
+function navigate(page){
+ const entry=SECTIONS.flatMap(x=>x.items).find(x=>x[0]===page)||SECTIONS[0].items[0];app.page=entry[0];
+ $('#crumb-current').textContent=entry[2];$('#sidebar').classList.remove('open');toggle('#mobile-scrim',false);
+ $('#sidebar-nav').querySelectorAll('[data-page]').forEach(el=>el.classList.toggle('active',el.dataset.page===app.page));
+ history.replaceState(null,'','#'+app.page);window.scrollTo(0,0);renderPage().catch(notifyError);
 }
-async function renderTickets(){
- state.tickets=await api('/tickets');
- const all=state.tickets;
- const available=all.filter(t=>t.status==='available').reduce((n,t)=>n+Math.max(0,t.quantity-t.sold_quantity),0);
- const sold=all.reduce((n,t)=>n+Number(t.sold_quantity||0),0);
- const pdfs=all.filter(t=>!!t.stored_filename).length;
- $('#page').innerHTML=pageTitle('Ticket Inventory',
-   'Track every seat, PDF and ticket lot with a searchable inventory.',
-   can('operator')?btn('＋ Upload / Add tickets','new-ticket'):'')+
- `<div class="metric-grid inventory-kpis">
-   ${metric('Available tickets',nfmt(available),'◈','Ready to list or reserve')}
-   ${metric('Tickets sold',nfmt(sold),'↗','Recorded sales across all lots')}
-   ${metric('Ticket lots',nfmt(all.length),'▤','Unique inventory groups')}
-   ${metric('PDF documents',nfmt(pdfs),'↓','Encrypted attachments')}
- </div>`+
- panel('Inventory explorer','Filter instantly by event, section, seats or status.',
-   `<div class="toolbar"><input id="ticket-search" type="search" placeholder="⌕ Search event, section, platform…" value="${safe(state.query)}" aria-label="Search ticket inventory"><select id="ticket-status" aria-label="Filter ticket status"><option value="">All statuses</option>${['available','reserved','sold','cancelled'].map(x=>`<option value="${x}" ${state.status===x?'selected':''}>${x[0].toUpperCase()+x.slice(1)}</option>`).join('')}</select><div class="toolbar-spacer"></div><span class="rows-count" id="inventory-result-count"></span></div><div id="inventory-table-holder"></div>`);
- filterInventory();
- $('#ticket-search')?.addEventListener('input',e=>{state.query=e.target.value;filterInventory()});
- $('#ticket-status')?.addEventListener('change',e=>{state.status=e.target.value;filterInventory()});
- for(const t of all){
-   pageAction('pdf-'+t.id,()=>window.open('/api/tickets/'+t.id+'/pdf','_blank','noopener,noreferrer'));
-   pageAction('ticket-list-'+t.id,()=>newListing(t.id));
-   pageAction('ticket-sell-'+t.id,()=>newSale(t.id));
-   pageAction('ticket-reserve-'+t.id,async()=>{await api('/tickets/'+t.id+'/status',{method:'PATCH',body:{status:'reserved'}});toast('Ticket lot reserved');await renderTickets()});
-   pageAction('ticket-release-'+t.id,async()=>{await api('/tickets/'+t.id+'/status',{method:'PATCH',body:{status:'available'}});toast('Ticket lot available again');await renderTickets()});
+async function loadAll(){const data=await Promise.all([api('/events'),api('/tickets'),api('/listings'),api('/sales'),api('/expenses'),api('/recaps')]);
+ [app.events,app.tickets,app.listings,app.sales,app.expenses,app.recaps]=data;}
+async function renderPage(){
+ if(!app.user)return;$('#page-content').innerHTML='<div class="loading">Loading your private workspace…</div>';
+ switch(app.page){
+  case'overview':return renderOverview();
+  case'events':return renderEvents();
+  case'tickets':return renderTickets();
+  case'listings':return renderListings();
+  case'sales':return renderSales();
+  case'expenses':return renderExpenses();
+  case'analytics':return renderAnalytics();
+  case'activity':return renderActivity();
+  case'settings':return renderSettings();
  }
 }
-async function newListing(selectedId){if(!can('operator'))return toast('Operator access needed',true);if(!state.tickets.length)state.tickets=await api('/tickets');const options=ticketOptions();if(!options.length)return toast('Add available ticket inventory first.',true);openModal('Create marketplace listing draft',[
-{name:'ticket_id',label:'Ticket lot',type:'select',options,value:selectedId||options[0].value,wide:true,required:true},
-{name:'marketplace',label:'Marketplace',type:'select',options:['viagogo','StubHub','TicketSwap','Other'].map(x=>({value:x,label:x}))},
-{name:'price',label:'Listing price / ticket',type:'number',min:.01,step:'.01',placeholder:'150.00',required:true},
-{name:'fee_pct',label:'Estimated commission (%)',type:'number',min:0,max:50,step:'.1',value:10},
-{name:'notes',label:'Internal listing notes',type:'textarea',wide:true,placeholder:'Delivery deadlines, restrictions or notes'}],async d=>{await api('/listings',{method:'POST',body:d});toast('Listing draft created')},{note:'This creates a <b>local draft only</b>. It is not automatically published to Viagogo. The official API requires approved OAuth access and verified integration.',label:'Create listing draft'})}
-async function renderListings(){state.listings=await api('/listings');$('#page').innerHTML=pageTitle('Market Listings','Prepare offers, track marketplace IDs and avoid accidental duplicate listings.',can('operator')?btn('＋ Create draft','new-listing'):'')+`<div class="notice-blue">▣ <b>Publishing control:</b> Listings are local drafts until you publish them on a marketplace. Mark a listing "Listed" only after entering the real external listing ID. Direct Viagogo API publishing is not activated.</div>`+panel('Listing management',`${state.listings.length} listings`,table(['Event','Marketplace','Price / ticket','Commission','Status','External ID','Action'],state.listings.map(l=>`<tr><td><div class="table-name">#${l.ticket_id} ${safe(l.event_title)}</div><div class="table-sub">${safe(l.section||'General')} · ${l.quantity-l.sold_quantity} unsold</div></td><td>${safe(l.marketplace)}</td><td>${fmtMoney(l.price_cents,l.currency)}</td><td>${(l.commission_bp/100).toFixed(1)}%</td><td>${statusBadge(l.status)}</td><td>${safe(l.external_id||'—')}</td><td>${can('operator')?`<button class="table-action" data-act="edit-listing-${l.id}">Update</button>`:'—'}</td></tr>`),empty('▧','No marketplace listings yet','Create your first draft from a ticket lot.')));for(const l of state.listings)pageAction(`edit-listing-${l.id}`,()=>editListing(l))}
-function editListing(l){openModal('Update listing #'+l.id,[{name:'status',label:'Listing status',type:'select',value:l.status,options:['draft','ready','listed','review','closed'].map(x=>({value:x,label:x}))},{name:'external_id',label:'Real marketplace listing ID',value:l.external_id||'',placeholder:'Required if status = Listed',wide:true}],async d=>{await api('/listings/'+l.id,{method:'PATCH',body:d});toast('Listing updated')},{note:'“Listed” is a manual confirmation. Enter only an actual marketplace listing ID. Closing a listing does not cancel it automatically on Viagogo.'})}
-async function newSale(selected){if(!can('operator'))return toast('Operator access needed',true);if(!state.tickets.length)state.tickets=await api('/tickets');const options=ticketOptions();if(!options.length)return toast('No available ticket inventory.',true);openModal('Record a sale',[
-{name:'ticket_id',label:'Ticket lot',type:'select',options,value:selected||options[0].value,wide:true},
-{name:'quantity',label:'Tickets sold',type:'number',min:1,max:100,value:1,required:true},
-{name:'amount',label:'Total sale amount',type:'number',min:0,step:'.01',required:true,placeholder:'250.00'},
-{name:'fees',label:'Total marketplace fees',type:'number',min:0,step:'.01',value:0},
-{name:'channel',label:'Sales channel',type:'select',options:['viagogo','StubHub','TicketSwap','Direct','Other'].map(x=>({value:x,label:x}))},
-{name:'reference',label:'Order / payout reference',placeholder:'Optional order reference',wide:true}],async d=>{await api('/sales',{method:'POST',body:d});toast('Sale recorded and ticket inventory updated')},{note:'Important: <b>sale amount and fees are totals for all tickets in this sale</b>. The app will prevent overselling the same ticket lot.',label:'Record sale'})}
-async function renderSales(){
- const [sales,insights,summary]=await Promise.all([api('/sales'),api('/insights'),api('/dashboard')]);
- state.sales=sales;state.insights=insights;
- const euro=sales.filter(s=>s.currency==='EUR');
- const revenue=euro.reduce((n,s)=>n+s.amount_cents,0);
- const fees=euro.reduce((n,s)=>n+s.fee_cents,0);
- const sold=sales.reduce((n,s)=>n+s.quantity,0);
- const stats=insights.event_performance||[];
- const netProfit=summary.gross_profit_cents;
- const renderEventRow=(e)=>{
-   const total=Math.max(1,Number(e.quantity||0));
-   const share=Math.max(0,Math.min(100,Math.round(100*e.sold/total)));
-   return `<tr>
-     <td><div class="table-name">${safe(e.title)}</div><div class="table-sub">${safe(e.city)} · ${fmtDate(e.starts_at)}</div></td>
-     <td><strong>${nfmt(e.sold)} / ${nfmt(e.quantity)}</strong><div class="sold-track"><span style="width:${share}%"></span></div></td>
-     <td><strong>${fmtMoney(e.revenue_cents)}</strong></td>
-     <td class="${e.net_profit_cents>=0?'positive':'negative'}"><strong>${fmtMoney(e.net_profit_cents)}</strong></td>
-     <td>${e.roi_pct===null?'<span class="muted">—</span>':`<span class="roi-pill ${e.roi_pct>=0?'up':'down'}">${e.roi_pct>0?'+':''}${e.roi_pct}%</span>`}</td>
-     <td><button class="table-action" data-act="event-breakdown-${e.id}">Details ↗</button></td>
-   </tr>`;
+function chart(series){
+ if(!series?.length)return '<div class="chart-message">Your revenue timeline will appear once you record a sale.</div>';
+ const max=Math.max(1,...series.map(x=>x.revenue_cents));const w=690,h=200,base=183;
+ const pts=series.map((e,i)=>({x:20+i*(w-38)/Math.max(1,series.length-1),y:base-e.revenue_cents/max*145,label:e.day,value:e.revenue_cents}));
+ const path=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ');
+ const fill=path+' L '+pts.at(-1).x.toFixed(1)+' '+base+' L '+pts[0].x.toFixed(1)+' '+base+' Z';
+ return `<div class="chart-box"><svg viewBox="0 0 700 230" role="img" aria-label="Revenue trend chart" preserveAspectRatio="none"><defs><linearGradient id="chartShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8e86fb" stop-opacity=".38"/><stop offset="100%" stop-color="#8e86fb" stop-opacity="0"/></linearGradient></defs>${[45,90,135,180].map(y=>`<line class="chart-gridline" x1="18" y1="${y}" x2="684" y2="${y}"/>`).join('')}<path class="chart-fill" d="${fill}"/><path class="chart-line" d="${path}"/>${pts.map(p=>`<circle class="chart-point" cx="${p.x}" cy="${p.y}" r="4"><title>${escapeHtml(p.label)}: ${money(p.value)}</title></circle>`).join('')}<text class="chart-lbl" x="20" y="218">${escapeHtml(series[0].day)}</text><text class="chart-lbl" x="590" y="218">${escapeHtml(series.at(-1).day)}</text></svg></div>`;
+}
+async function renderOverview(){
+ const [d,events]=await Promise.all([api('/dashboard'),api('/events')]);app.dashboard=d;app.events=events;
+ const e=events.filter(x=>new Date(x.starts_at)>new Date()).slice(0,5);
+ $('#page-content').innerHTML=heading('Workspace Overview','A real-time snapshot of your tickets, events and sales — visible only to you.',button('+ Add tickets','new-ticket')+button('New event ↗','new-event','outline'))+
+ `<section class="hero-panel"><div><span class="hero-kicker">✦ YOUR TICKET OPERATIONS, SIMPLIFIED</span><h2>Good to see you, ${escapeHtml(app.user.display_name.split(' ')[0])}.</h2><p>Every ticket, every sale and every PDF belongs to your account. Track your inventory and results with complete clarity.</p></div><div class="hero-actions">${button('Add a ticket','new-ticket','white')}${button('View analytics ↗','go-analytics','outline')}</div></section>`+
+ `<div class="kpi-grid">${kpi('Net profit',money(d.profit_cents),'↗','Realized profit in EUR',d.profit_cents>=0?'positive':'negative')}${kpi('Sales revenue',money(d.revenue_cents),'€','Recorded EUR sales')}${kpi('Available tickets',num(d.available),'◈','Remaining individual seats')}${kpi('Tickets sold',num(d.sold),'▣','Across all your events')}</div>`+
+ `<div class="two-cols">${card('Revenue performance','EUR revenue recorded over the most recent sale dates',chart(d.revenue_trend),hrefButton('Sales details','go-sales'))}${card('Portfolio at a glance','Your personal event and ticket inventory',`<div class="panel-body">${[['My events',num(d.events)],['Ticket lots',num(d.tickets)],['Encrypted PDF files',num(d.attachments)],['Local listings',num(d.listings)],['Individual sales',num(d.sales)]].map(([l,v])=>`<div class="summary-row"><span>${l}</span><strong>${v}</strong></div>`).join('')}</div>`)}</div>`+
+ `<div class="two-cols">${card('Your upcoming events','Next scheduled events in your private calendar',e.length?`<div class="table-wrap">${table(['Event','Date','Tickets'],e.map(v=>`<tr><td><span class="table-strong">${escapeHtml(v.title)}</span><span class="table-sub">${escapeHtml(v.venue||v.city||'Location not specified')}</span></td><td>${niceDate(v.starts_at)}</td><td>${num(v.available)} available</td></tr>`))}</div>`:empty('▤','No upcoming events','Create an event to organize your first batch of tickets.',button('Create event','new-event')) ,hrefButton('All events','go-events'))}${card('Recent sales','Your latest completed sale records',d.recent_sales.length?table(['Event','Tickets','Revenue'],d.recent_sales.map(s=>`<tr><td><span class="table-strong">${escapeHtml(s.event_title)}</span><span class="table-sub">${niceDate(s.sold_at)}</span></td><td>${s.quantity}</td><td><strong class="positive">${money(s.revenue_cents,s.currency)}</strong></td></tr>`)):empty('↗','No sales recorded','Record a sale to see your actual profits.',button('Record sale','new-sale')),hrefButton('Sales tracker','go-sales'))}</div>`;
+}
+function formOptions(data,placeholder='Choose an option'){return [{value:'',label:placeholder},...data]}
+function eventOptions(){return formOptions(app.events.map(e=>({value:e.id,label:e.title+' · '+niceDate(e.starts_at)})),'Select an event')}
+function ticketOptions(){return formOptions(app.tickets.filter(t=>t.quantity>t.sold_quantity).map(t=>({value:t.id,label:'#'+t.id+' '+t.event_title+' · '+(t.section||'General')+' ('+(t.quantity-t.sold_quantity)+' left)'})),'Select a ticket lot')}
+async function renderEvents(){app.events=await api('/events');const rows=app.events;
+ $('#page-content').innerHTML=heading('My Events','Your upcoming concerts, sports and live events in one private calendar.',button('+ Create Event','new-event'))+
+ `<div class="stats-strip"><span class="stat-chip"><strong>${num(rows.length)}</strong> events</span><span class="stat-chip"><strong>${num(rows.reduce((s,e)=>s+e.available,0))}</strong> available tickets</span><span class="stat-chip">Your private collection</span></div>`+
+ (rows.length?`<div class="event-cards" style="margin-top:20px">${rows.map(e=>`<article class="event-card"><div class="event-type">◆ ${escapeHtml(e.category||'EVENT')}</div><h3>${escapeHtml(e.title)}</h3><p>▤ ${niceDate(e.starts_at)}</p><p>⌾ ${escapeHtml([e.venue,e.city].filter(Boolean).join(' · ')||'Venue not specified')}</p><div class="event-bottom"><span>${num(e.lots)} ticket lots · ${num(e.available)} remaining</span><button class="mini-btn" data-action="edit-event" data-id="${e.id}">Edit ↗</button></div></article>`).join('')}</div>`:empty('▤','Your event calendar is empty','Create your first event to start organizing tickets.',button('Create first event','new-event')));
+}
+async function renderTickets(){await Promise.all([api('/tickets').then(x=>app.tickets=x),api('/events').then(x=>app.events=x)]);app.search=app.search||'';
+ $('#page-content').innerHTML=heading('Ticket Inventory','All of your ticket lots, seats and PDFs — private and fully accounted for.',button('+ Add Tickets','new-ticket'))+
+ `<div class="kpi-grid">${kpi('Ticket lots',num(app.tickets.length),'▧','Stored in your account')}${kpi('Available seats',num(app.tickets.reduce((n,t)=>n+t.quantity-t.sold_quantity,0)),'◈','Ready for your next sale')}${kpi('Sold tickets',num(app.tickets.reduce((n,t)=>n+t.sold_quantity,0)),'↗','Units marked as sold')}${kpi('PDF attachments',num(app.tickets.reduce((n,t)=>n+t.pdf_count,0)),'▤','Encrypted in your vault')}</div>`+
+ `<div class="filters"><input class="filter-input" id="ticket-filter" type="search" placeholder="Search event, sector, seat, source…" value="${escapeHtml(app.search)}"><select class="filter-select" id="ticket-status"><option value="all">All inventory</option><option value="available">Available</option><option value="sold">Sold out</option></select></div>`+
+ card('My ticket lots','Every lot is visible to your account only',`<div id="ticket-table">${ticketTable(app.tickets)}</div>`);
+ $('#ticket-filter').addEventListener('input',renderFilteredTickets);$('#ticket-status').addEventListener('change',renderFilteredTickets);
+}
+function renderFilteredTickets(){app.search=$('#ticket-filter').value;let rows=app.tickets;
+ const q=app.search.trim().toLowerCase();const filter=$('#ticket-status').value;
+ if(q)rows=rows.filter(t=>[t.event_title,t.section,t.row_label,t.seats,t.provider].join(' ').toLowerCase().includes(q));
+ if(filter==='available')rows=rows.filter(t=>t.sold_quantity<t.quantity);
+ if(filter==='sold')rows=rows.filter(t=>t.sold_quantity===t.quantity);
+ $('#ticket-table').innerHTML=ticketTable(rows);
+}
+function ticketTable(rows){return table(['Event / Lot','Section / Seat','Inventory','Cost / ticket','PDF vault','Actions'],rows.map(t=>`<tr><td><div class="row-title"><span class="circle-icon">▣</span><div><span class="table-strong">${escapeHtml(t.event_title)}</span><span class="table-sub">#${t.id} · ${niceDate(t.starts_at)} · ${escapeHtml(t.provider||'Direct')}</span></div></div></td><td><span class="table-strong">${escapeHtml(t.section||'General admission')}</span><span class="table-sub">Row ${escapeHtml(t.row_label||'—')} · Seat ${escapeHtml(t.seats||'—')}</span></td><td>${statusTag(t.quantity>t.sold_quantity?'Available':'Sold out')}<span class="table-sub">${t.quantity-t.sold_quantity} / ${t.quantity} left</span></td><td>${money(t.purchase_cents,t.currency)}</td><td>${t.pdf_count?'🔒 '+t.pdf_count+' PDF(s)':'No PDF'}</td><td><button class="mini-btn" data-action="manage-pdf" data-id="${t.id}">PDF Vault</button><button class="mini-btn" data-action="sale-ticket" data-id="${t.id}">Sell ↗</button></td></tr>`),'No matching tickets found')}
+async function renderListings(){await Promise.all([api('/listings').then(x=>app.listings=x),api('/tickets').then(x=>app.tickets=x)]);
+ $('#page-content').innerHTML=heading('My Listings','Create and track marketplace listings without losing control of your inventory.',button('+ New listing','new-listing'))+
+ `<div class="section-note"><strong>Marketplace status:</strong> Listings are stored locally in your personal account. Viagogo publication is not active until an authorized seller integration is approved.</div>`+
+ card('Listing manager',`${app.listings.length} listings in your private database`,table(['Event / Ticket','Marketplace','Asking price','Status','ID','Actions'],app.listings.map(l=>`<tr><td><span class="table-strong">${escapeHtml(l.event_title)}</span><span class="table-sub">${escapeHtml(l.section||'General')} · Lot #${l.ticket_id}</span></td><td>${escapeHtml(l.marketplace)}</td><td>${money(l.price_cents,l.currency)}</td><td>${statusTag(l.status)}</td><td>${escapeHtml(l.external_id||'—')}</td><td><button class="mini-btn" data-action="edit-listing" data-id="${l.id}">Manage</button></td></tr>`),'No listings in your account'));
+}
+async function renderSales(){await Promise.all([api('/sales').then(x=>app.sales=x),api('/tickets').then(x=>app.tickets=x)]);
+ const rev=app.sales.filter(x=>x.currency==='EUR').reduce((s,x)=>s+x.revenue_cents,0);
+ $('#page-content').innerHTML=heading('Sales Tracker','Track actual sales, marketplace fees and delivery references.',button('+ Record Sale','new-sale'))+
+ `<div class="kpi-grid">${kpi('Recorded sales',num(app.sales.length),'↗','Transactions in your account')}${kpi('Tickets sold',num(app.sales.reduce((s,x)=>s+x.quantity,0)),'▣','Individual ticket units')}${kpi('EUR revenue',money(rev),'€','Excludes other currencies')}${kpi('EUR fees',money(app.sales.filter(x=>x.currency==='EUR').reduce((s,x)=>s+x.fee_cents,0)),'◈','Recorded marketplace fees')}</div>`+
+ card('Sales ledger','All sales are private and update your available ticket quantities',table(['Event','Sale date','Units','Revenue','Fees','Channel','Reference'],app.sales.map(s=>`<tr><td><span class="table-strong">${escapeHtml(s.event_title)}</span><span class="table-sub">${escapeHtml(s.section||'General')}</span></td><td>${niceDate(s.sold_at)}</td><td>${num(s.quantity)}</td><td><strong class="positive">${money(s.revenue_cents,s.currency)}</strong></td><td>${money(s.fee_cents,s.currency)}</td><td>${escapeHtml(s.channel)}</td><td>${escapeHtml(s.reference||'—')}</td></tr>`),'No sales yet'));
+}
+async function renderExpenses(){await Promise.all([api('/expenses').then(x=>app.expenses=x),api('/events').then(x=>app.events=x)]);
+ $('#page-content').innerHTML=heading('Expenses & Costs','Understand the operating costs behind your ticket portfolio.',button('+ Add Expense','new-expense'))+
+ `<div class="stats-strip"><span class="stat-chip"><strong>${num(app.expenses.length)}</strong> entries</span><span class="stat-chip"><strong>${money(app.expenses.filter(x=>x.currency==='EUR').reduce((s,x)=>s+x.amount_cents,0))}</strong> EUR expenses</span></div><div style="height:18px"></div>`+
+ card('Expense ledger','Costs can be connected to a specific event or recorded as general expenses',table(['Description','Event','Amount','Date'],app.expenses.map(x=>`<tr><td><span class="table-strong">${escapeHtml(x.title)}</span></td><td>${escapeHtml(x.event_title||'General / no event')}</td><td>${money(x.amount_cents,x.currency)}</td><td>${niceDate(x.created_at)}</td></tr>`),'No expenses recorded'));
+}
+async function renderAnalytics(){app.recaps=await api('/recaps');const totals=app.recaps.reduce((r,x)=>({profit:r.profit+x.profit_cents,revenue:r.revenue+x.revenue_cents,sold:r.sold+x.sold}),{profit:0,revenue:0,sold:0});
+ $('#page-content').innerHTML=heading('Portfolio Analytics','Accurate event-by-event performance from your recorded transactions.',button('Export sales CSV','export-sales','outline'))+
+ `<div class="kpi-grid">${kpi('Net profit',money(totals.profit),'↗','EUR after recorded costs',totals.profit>=0?'positive':'negative')}${kpi('Gross revenue',money(totals.revenue),'€','EUR only')}${kpi('Tickets sold',num(totals.sold),'▣','Across all events')}${kpi('Analyzed events',num(app.recaps.length),'▤','Private event histories')}</div>`+
+ `<div class="section-note"><strong>Financial transparency:</strong> Net profit = EUR sales revenue − marketplace fees − cost of sold tickets − related EUR expenses. Other currencies are excluded until converted explicitly; ROI is based on cost of sold tickets and event expenses.</div>`+
+ card('Event profitability','A readable report with a clear calculation for every event',table(['Event','Sold / Available','Revenue','Ticket cost','Fees + expenses','Net profit','ROI'],app.recaps.map(r=>`<tr><td><span class="table-strong">${escapeHtml(r.title)}</span><span class="table-sub">${escapeHtml(r.city)} · ${niceDate(r.starts_at)}${r.has_non_eur?' · other currencies excluded':''}</span></td><td>${num(r.sold)} / ${num(r.available)}</td><td>${money(r.revenue_cents)}</td><td>${money(r.sold_cost_cents)}</td><td>${money(r.fee_cents+r.expenses_cents)}</td><td><strong class="${r.profit_cents>=0?'positive':'negative'}">${money(r.profit_cents)}</strong></td><td>${r.roi_percent===null?'—':(r.roi_percent>0?'+':'')+r.roi_percent.toFixed(1)+'%'}</td></tr>`),'No sale analytics yet'));
+}
+async function renderActivity(){const rows=await api('/audit');$('#page-content').innerHTML=heading('Activity Log','A private history of updates and changes to your own records.')+
+ card('My recent activity','Action history stays inside your personal database',table(['Date','Action','Record type','ID'],rows.map(r=>`<tr><td>${niceDate(r.created_at)}</td><td>${statusTag(r.action)}</td><td>${escapeHtml(r.resource)}</td><td>#${r.resource_id}</td></tr>`),'No activity yet'));
+}
+async function renderSettings(){const me=await api('/me');const google=app.google;
+ $('#page-content').innerHTML=heading('My Account','Manage your personal login, identity and data exports.')+
+ `<div class="two-cols">${card('Your identity','This workspace belongs only to your own login',`<div class="profile-card"><div class="profile-avatar">${escapeHtml(me.name[0]?.toUpperCase()||'C')}</div><div><h3>${escapeHtml(me.name)}</h3><p>${escapeHtml(me.email)}</p><span class="tag green">● Private account</span></div></div><div class="panel-body"><div class="secure-row"><div><strong>Personal database</strong><small>Separate inventory and event records</small></div><span class="tag green">Isolated</span></div><div class="secure-row"><div><strong>PDF encryption</strong><small>Private encrypted vault stored per account</small></div><span class="tag green">Active</span></div><div class="secure-row"><div><strong>Google sign-in</strong><small>${me.has_google?'Connected to this account':'Not connected'}</small></div>${me.has_google?'<span class="tag green">Connected</span>':google?button('Connect Google','connect-google','outline'):'<span class="tag grey">Not set up</span>'}</div></div>`)}${card('Account controls','Protect your sign-in and export your records',`<div class="panel-body"><div class="summary-row"><span>My events</span><strong>${num(me.counts.events)}</strong></div><div class="summary-row"><span>Ticket lots</span><strong>${num(me.counts.tickets)}</strong></div><div class="summary-row"><span>Encrypted PDF files</span><strong>${num(me.counts.attachments)}</strong></div><div class="summary-row"><span>Sales</span><strong>${num(me.counts.sales)}</strong></div><div style="margin-top:19px;display:flex;flex-wrap:wrap;gap:10px">${button('Change password','change-password','subtle')}${button('Log out','sign-out','outline')}</div></div>`)}</div>`+
+ card('Your private data','Download a CSV copy of your own records',`<div class="panel-body"><div class="section-note">PDF files are encrypted and cannot be accessed by other accounts. Back up the entire server data directory, including per-user encryption keys, through your hosting provider.</div><div class="heading-actions">${['events','tickets','listings','sales','expenses'].map(x=>button('Export '+x,'export-'+x,'outline')).join('')}</div></div>`);
+}
+/* Input forms */
+function control({name,label,type='text',required=false,value='',placeholder='',options=[],wide=false,help='',min,max,step}){
+ const id='input-'+name,attrs=(required?' required':'')+(min!==undefined?` min="${min}"`:'')+(max!==undefined?` max="${max}"`:'')+(step!==undefined?` step="${step}"`:'');
+ let element;
+ if(type==='select')element=`<select name="${name}" id="${id}" ${attrs}>${options.map(o=>`<option value="${escapeHtml(o.value)}" ${String(o.value)===String(value)?'selected':''}>${escapeHtml(o.label)}</option>`).join('')}</select>`;
+ else if(type==='textarea')element=`<textarea id="${id}" name="${name}" ${attrs} placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</textarea>`;
+ else element=`<input id="${id}" type="${type}" name="${name}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" ${attrs}>`;
+ return `<div class="field ${wide?'full':''}"><label for="${id}">${escapeHtml(label)}</label>${element}${help?`<small>${escapeHtml(help)}</small>`:''}</div>`;
+}
+function openModal(title,fields,callback,buttonLabel='Save changes'){
+ $('#modal-title').textContent=title;$('#modal-fields').innerHTML=fields.map(control).join('');$('#modal-save').textContent=buttonLabel;
+ toggle('#modal-backdrop',true);
+ $('#modal-form').onsubmit=async e=>{
+  e.preventDefault();const submit=$('#modal-save');submit.disabled=true;
+  const values=Object.fromEntries(new FormData(e.target).entries());
+  try{await callback(values);closeModal();await renderPage()}catch(err){notifyError(err)}finally{submit.disabled=false}
  };
- $('#page').innerHTML=pageTitle('Sales & Profit','Every sale, every cost and your true performance — in one place.',can('operator')?btn('＋ Record a sale','new-sale'):'')+
- `<div class="metric-grid v4-finance-grid">
-   ${metric('Net profit',fmtMoney(netProfit),'↗','Based on recorded EUR sales and costs')}
-   ${metric('Gross revenue',fmtMoney(revenue),'€','Confirmed EUR transactions')}
-   ${metric('Tickets sold',nfmt(sold),'◈','Across recorded sales')}
-   ${metric('Marketplace fees',fmtMoney(fees),'◎','Recorded EUR sales fees')}
- </div>
- <div class="insights-explainer"><span class="info-dot">i</span><div><strong>Transparent financial reporting</strong><p>EUR results are calculated from the database. Net profit deducts ticket purchase costs, sales fees and recorded event expenses; other currencies are not silently converted.</p></div></div>
- <section class="section-heading"><div><span class="eyebrow">PERFORMANCE BY EVENT</span><h2>Where your profit comes from</h2><p>Compare sales, remaining inventory and your return on investment.</p></div><span class="section-count">${stats.length} event${stats.length===1?'':'s'}</span></section>
- ${panel('Event performance','Click Details to see exact costs and fees.',table(['Event','Sold','Revenue','Net profit','ROI',''],stats.map(renderEventRow),empty('↗','Nothing sold yet','Add tickets and record a sale to unlock financial reporting.')))}
- <div id="event-breakdown" class="hidden"></div>
- <section class="section-heading"><div><span class="eyebrow">TRANSACTION HISTORY</span><h2>All recorded sales</h2><p>Clear audit trail of quantities, marketplaces and fees.</p></div><span class="section-count">${sales.length} transactions</span></section>
- ${panel('Sales ledger','Complete transaction records',table(['Event & section','Quantity','Sale amount','Fees','After fees','Marketplace','Date','Reference'],sales.map(s=>`<tr><td><div class="table-name">${safe(s.event_title)}</div><div class="table-sub">${safe(s.section||'General')} · ${safe(s.seats||'—')}</div></td><td>${s.quantity}</td><td><strong>${fmtMoney(s.amount_cents,s.currency)}</strong></td><td>${fmtMoney(s.fee_cents,s.currency)}</td><td class="positive">${fmtMoney(s.amount_cents-s.fee_cents,s.currency)}</td><td>${safe(s.channel)}</td><td>${fmtDate(s.sold_at)}</td><td>${safe(s.reference||'—')}</td></tr>`),empty('↗','No sales recorded','Record a sale to start tracking revenue and profit.')))}
- `;
- for(const e of stats)pageAction('event-breakdown-'+e.id,()=>renderEventBreakdown(e.id));
+ $('#modal-fields').querySelector('input,select,textarea')?.focus();
 }
-async function renderEventBreakdown(id){
- const response=await api('/events/'+id+'/recap');
- const e=response.summary;
- const total=Math.max(1,Number(e.quantity||0));
- const share=Math.min(100,Math.max(0,Math.round((e.sold||0)/total*100)));
- const target=$('#event-breakdown');
- if(!target)return;
- target.classList.remove('hidden');
- target.innerHTML=`<article class="profit-detail">
-   <div class="profit-detail-header"><div><div class="eyebrow">DETAILED FINANCIAL BREAKDOWN</div><h2>${safe(e.title)}</h2><p>${safe(e.venue||'')} · ${safe(e.city||'')} · ${fmtDate(e.starts_at)}</p></div><button type="button" class="icon-btn" data-act="close-event-detail" aria-label="Close event breakdown">✕</button></div>
-   <div class="profit-primary"><div><small>NET PROFIT</small><strong class="${e.net_profit_cents>=0?'positive':'negative'}">${fmtMoney(e.net_profit_cents)}</strong></div><div><small>RETURN ON INVESTMENT</small><strong>${e.roi_pct===null?'—':e.roi_pct+'%'}</strong></div><div><small>INVENTORY SOLD</small><strong>${nfmt(e.sold)} / ${nfmt(e.quantity)}</strong></div></div>
-   <div class="progress-large"><span style="width:${share}%"></span></div>
-   <div class="profit-lines"><div><span>Sales revenue</span><strong>${fmtMoney(e.revenue_cents)}</strong></div><div><span>Cost of sold tickets</span><strong>−${fmtMoney(e.sold_cost_cents)}</strong></div><div><span>Marketplace fees</span><strong>−${fmtMoney(e.fees_cents)}</strong></div><div><span>Event expenses</span><strong>−${fmtMoney(e.expenses_cents)}</strong></div></div>
-   <p class="profit-footnote">EUR only • Figures come from recorded sales, costs and fees. Unsold ticket costs are not included in realized profit.</p>
- </article>`;
- pageAction('close-event-detail',()=>{target.classList.add('hidden');target.innerHTML=''})
- target.scrollIntoView({behavior:'smooth',block:'nearest'});
+function closeModal(){toggle('#modal-backdrop',false);$('#modal-form').onsubmit=null}
+const COMMON_CURRENCIES=['EUR','CZK','USD','GBP','PLN','CHF'].map(x=>({value:x,label:x}));
+async function newEvent(existing=null){
+ openModal(existing?'Edit event':'Create a new event',[
+  {name:'title',label:'Event / artist name',value:existing?.title||'',required:true,wide:true,placeholder:'Example: Coldplay — Music of the Spheres'},
+  {name:'starts_at',label:'Event date & time',type:'datetime-local',value:existing?inputDateFromUTC(existing.starts_at):inputDate(30),required:true},
+  {name:'category',label:'Event category',type:'select',value:existing?.category||'Concert',options:['Concert','Sports','Festival','Theatre','Other'].map(v=>({value:v,label:v}))},
+  {name:'venue',label:'Venue',value:existing?.venue||'',placeholder:'Example: O2 Arena'},
+  {name:'city',label:'City',value:existing?.city||'',placeholder:'Example: Prague'},
+  {name:'country',label:'Country',value:existing?.country||'',placeholder:'Example: Czechia'},
+  {name:'notes',label:'Internal notes',type:'textarea',value:existing?.notes||'',wide:true}
+ ],async v=>{
+  v.starts_at=isoLocal(v.starts_at);
+  await api(existing?'/events/'+existing.id:'/events',{method:existing?'PATCH':'POST',body:v});notify(existing?'Event updated':'Event created in your private account');
+ },existing?'Update event':'Create event');
 }
-async function renderExpenses(){state.expenses=await api('/expenses');const total=state.expenses.filter(e=>e.currency==='EUR').reduce((n,x)=>n+x.amount_cents,0);$('#page').innerHTML=pageTitle('Expenses','Track delivery expenses, subscriptions, proxy costs and operational fees.',can('operator')?btn('＋ Add expense','new-expense'):'')+`<div class="metric-grid">${metric('Expense entries',state.expenses.length,'◎','Across all currencies')}${metric('Total expenses · EUR',fmtMoney(total),'€','Tracked operational costs')}${metric('Active events',state.dashboard?.events||'—','▦','Event-linked costs')}${metric('Inventory',state.dashboard?.lots||'—','◈','Ticket lots')}</div>`+panel('Expense ledger','Every expense can optionally be linked to a specific event',table(['Description','Event','Amount','Date','Notes'],state.expenses.map(e=>`<tr><td><div class="table-name">${safe(e.label)}</div></td><td>${safe(e.event_title||'General operating cost')}</td><td>${fmtMoney(e.amount_cents,e.currency)}</td><td>${fmtDate(e.incurred_at)}</td><td>${safe(e.notes||'—')}</td></tr>`),empty('◎','No expenses yet','Keep costs organized to understand your real margin.')))}
-async function newExpense(){if(!can('operator'))return toast('Operator access needed',true);if(!state.events.length)state.events=await api('/events');const evopts=[{value:'',label:'General / not linked'},...eventOptions()];openModal('Add an expense',[
-{name:'label',label:'Expense description',placeholder:'Hosting, delivery fees, software, travel…',required:true,wide:true},
-{name:'event_id',label:'Related event (optional)',type:'select',options:evopts},
-{name:'amount',label:'Amount',type:'number',min:0,step:'.01',required:true},
-{name:'currency',label:'Currency',type:'select',options:['EUR','CZK','USD','GBP','PLN','CHF'].map(x=>({value:x,label:x}))},
-{name:'notes',label:'Internal notes',type:'textarea',wide:true}],async d=>{if(!d.event_id)delete d.event_id;else d.event_id=Number(d.event_id);await api('/expenses',{method:'POST',body:d});toast('Expense recorded')})}
-async function renderTeam(){if(!can('manager'))return setPage('dashboard');state.members=await api('/team');let invites=[];if(can('admin'))invites=await api('/team/invites');$('#page').innerHTML=pageTitle('Team Members','Professional access control for your staff, managers and read-only viewers.',can('admin')?btn('＋ Invite user','invite-user'):'')+`<div class="notice-blue">☷ Every teammate signs in with their own email and password. Roles control who can create tickets, manage sales, invite colleagues and view the audit trail.</div>`+panel('Workspace access',`${state.members.length} members`,table(['Name','Email','Role','Status','Last login','Action'],state.members.map(u=>`<tr><td><div class="table-name">${safe(u.name)}</div></td><td>${safe(u.email)}</td><td>${statusBadge(u.role)}</td><td>${statusBadge(u.enabled?'active':'disabled')}</td><td>${fmtDate(u.last_login)}</td><td>${can('admin')&&u.id!==state.user.id?`<button class="table-action" data-act="member-edit-${u.id}">Manage</button><button class="table-action" data-act="member-reset-${u.id}">Reset login</button>`:'—'}</td></tr>`),empty('♙','No team members','Invite users to work with you.')))+`<div style="margin-top:20px">${panel('Roles & access','Principle of least privilege',`<div class="panel-body"><div class="grid grid-2">${[['Administrator','Manage users, inventory and all workspace records.'],['Manager','Manage inventory and team reporting; cannot change user access.'],['Operator','Create tickets, listings, sales, expenses and events.'],['Viewer','Read-only access to workspace records.']].map(([a,b])=>`<div class="kpi-pill"><strong style="font-size:13px;margin:0 0 8px">${a}</strong><small>${b}</small></div>`).join('')}</div></div>`)}</div>`;state.members.forEach(u=>{pageAction(`member-edit-${u.id}`,()=>manageMember(u));pageAction(`member-reset-${u.id}`,()=>issueReset(u))})}
-function inviteUser(){if(!can('admin'))return toast('Admin access needed',true);openModal('Invite a team member',[{name:'email',label:'Work email',type:'email',required:true,wide:true,placeholder:'colleague@company.com'},{name:'role',label:'Initial role',type:'select',options:['viewer','operator','manager','admin'].map(x=>({value:x,label:x}))}],async d=>{const res=await api('/team/invites',{method:'POST',body:d});state.inviteToken=res;toast('Invitation created – copy the link from the next dialog');setTimeout(showInviteLink,100)},{note:'The app will create a one-time invitation link valid for 48 hours. No email is automatically sent; share it securely with the intended person.'})}
-function showInviteLink(){const invite=state.inviteToken;if(!invite)return;const url=location.origin+'/?invite='+encodeURIComponent(invite.token)+'&email='+encodeURIComponent(invite.email);openModal('Invitation ready',[{name:'invite_url',label:'Secure one-time link',value:url,wide:true},{name:'note',label:'Next step',value:'Send the invite link privately to '+invite.email,wide:true}],async()=>{try{await navigator.clipboard.writeText(url);toast('Invite link copied to clipboard')}catch(e){toast('Select and copy the link above')};},{note:'The link allows one registration for the chosen email, expires after 48 hours and contains a secret. Do not share it publicly.',label:'Copy invitation link'})}
-async function issueReset(u){
- if(!confirm('Issue a one-time password reset link for '+u.email+'?'))return;
- const result=await api('/team/'+u.id+'/password-reset',{method:'POST'});
- const url=location.origin+'/?reset='+encodeURIComponent(result.token)+'&email='+encodeURIComponent(result.email);
- openModal('One-time password reset',[{name:'reset_url',label:'Private reset link (30 min)',value:url,wide:true}],async()=>{
-   try{await navigator.clipboard.writeText(url);toast('Reset link copied')}catch(e){toast('Copy the link manually')}
- },{note:'Share only with '+safe(u.email)+' through a trusted channel. The link expires after 30 minutes and can be used once.',label:'Copy reset link'});
+function inputDateFromUTC(v){const d=new Date(v);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
+async function newTicket(){app.events=await api('/events');if(!app.events.length){notify('Create an event before adding tickets.');navigate('events');return newEvent()}
+ openModal('Add tickets to inventory',[
+  {name:'event_id',label:'Event',type:'select',options:eventOptions(),required:true,wide:true},
+  {name:'provider',label:'Ticket provider',placeholder:'Ticketmaster, AXS, Eventim…'},
+  {name:'ticket_type',label:'Ticket format',type:'select',options:['E-Ticket','Mobile Transfer','PDF','Physical'].map(x=>({label:x,value:x}))},
+  {name:'section',label:'Section',placeholder:'Example: 421'},
+  {name:'row_label',label:'Row',placeholder:'Example: 15'},
+  {name:'seats',label:'Seats',placeholder:'Example: 3–6'},
+  {name:'quantity',label:'Quantity of tickets',type:'number',min:1,max:1000,required:true,value:1},
+  {name:'purchase_price',label:'Purchase price per ticket',type:'number',step:'.01',min:0,required:true,value:0},
+  {name:'currency',label:'Purchase currency',type:'select',options:COMMON_CURRENCIES},
+  {name:'notes',label:'Private notes',type:'textarea',wide:true,placeholder:'Transfer instructions or ticket conditions (no passwords or OTPs)'}
+ ],async v=>{
+  if(!v.event_id)throw Error('Please select an event.');v.event_id=Number(v.event_id);v.quantity=Number(v.quantity);
+  const result=await api('/tickets',{method:'POST',body:v});notify('Ticket lot saved. You can now attach PDFs.');navigate('tickets');return result;
+ },'Save ticket lot');
 }
-function manageMember(u){openModal('Manage '+u.name,[{name:'role',label:'Role',type:'select',value:u.role,options:['viewer','operator','manager','admin'].map(x=>({value:x,label:x}))},{name:'enabled',label:'Account status',type:'select',value:String(u.enabled),options:[{value:'1',label:'Enabled'},{value:'0',label:'Disabled — revoke sessions'}]}],async d=>{await api('/team/'+u.id,{method:'PATCH',body:{role:d.role,enabled:d.enabled==='1'}});toast('Team member updated')},{note:'Disabling a member immediately revokes their active sessions. Use separate accounts for every person.'})}
-async function renderAudit(){if(!can('manager'))return setPage('dashboard');const logs=await api('/audit');$('#page').innerHTML=pageTitle('Activity Log','A transparent audit trail of your team’s operational changes.')+panel('Recent changes',`${logs.length} recent actions`,table(['Timestamp','Team member','Action','Type','Record','Details'],logs.map(l=>`<tr><td>${fmtDate(l.created_at)}</td><td>${safe(l.actor||'System')}</td><td>${statusBadge(l.action)}</td><td>${safe(l.entity)}</td><td>#${l.entity_id||'—'}</td><td>${safe(l.detail||'—')}</td></tr>`),empty('☷','No activity yet','Activity appears when team members use the workspace.')))}
-async function renderAccount(){
- const m=state.user||{};
- $('#page').innerHTML=pageTitle('My Account','Manage your sign-in security and export workspace records.')+
- `<div class="grid grid-2 account-grid">
-   ${panel('Account & security','Your personal workspace identity',`<div class="panel-body account-profile"><div class="profile-avatar">${safe((m.name||'C')[0].toUpperCase())}</div><div><h3>${safe(m.name||'Workspace member')}</h3><p>${safe(m.email||'')}</p><span class="role-chip">${safe(m.role||'viewer')}</span></div></div><div class="panel-body account-actions">${btn('Change my password','change-password','ghost')} ${state.googleEnabled?(state.googleLinked?'<span class="google-connection-badge">✓ Google account connected</span>':btn('Connect Google account','link-google','ghost')):''}</div>`)}
-   ${panel('Backups & exports','Keep copies of your important records',`<div class="panel-body"><p class="muted">Export ticket inventory and sales history as CSV. Administrators should regularly back up the entire private data directory, including its encryption key.</p><div class="account-actions">${can('manager')?`${btn('Export inventory CSV','export-tickets','ghost')} ${btn('Export sales CSV','export-sales','ghost')}`:'Ask a Manager or Admin to export records.'}</div></div>`)}
- </div>`;
+async function newListing(existing=null){app.tickets=await api('/tickets');const options=ticketOptions();if(!existing&&options.length<=1){notify('Add available tickets before creating a listing.');return}
+ openModal(existing?'Edit your listing':'Create a local listing',[
+  {name:'ticket_id',label:'Ticket lot',type:'select',options:existing?[{value:existing.ticket_id,label:existing.event_title+' · Lot #'+existing.ticket_id}]:options,required:true,wide:true},
+  {name:'marketplace',label:'Marketplace',value:existing?.marketplace||'viagogo',placeholder:'viagogo, TicketSwap, StubHub…'},
+  {name:'external_id',label:'External listing ID',value:existing?.external_id||'',placeholder:'Optional'},
+  {name:'price',label:'Asking price per ticket',type:'number',min:0,step:'.01',value:existing?(existing.price_cents/100).toFixed(2):'0',required:true},
+  {name:'currency',label:'Currency',type:'select',value:existing?.currency||'EUR',options:COMMON_CURRENCIES},
+  {name:'status',label:'Status',type:'select',value:existing?.status||'draft',options:['draft','ready','listed','paused','sold','cancelled'].map(x=>({value:x,label:x}))},
+  {name:'notes',label:'Private notes',type:'textarea',value:existing?.notes||'',wide:true}
+ ],async v=>{if(!v.ticket_id)throw Error('Choose a ticket lot.');v.ticket_id=Number(v.ticket_id);
+ await api(existing?'/listings/'+existing.id:'/listings',{method:existing?'PATCH':'POST',body:v});notify('Listing saved privately (not published to a marketplace).');
+ },existing?'Update listing':'Save local listing');
 }
-function changePassword(){openModal('Change your password',[{name:'current_password',label:'Current password',type:'password',required:true,wide:true},{name:'new_password',label:'New password (12+ characters, letters + numbers)',type:'password',required:true,wide:true,minlength:12}],async d=>{await api('/auth/password',{method:'POST',body:d});toast('Password changed. Other sessions were signed out.')})}
-pageAction('new-event',newEvent);pageAction('new-ticket',newTicket);pageAction('new-listing',()=>newListing());pageAction('new-sale',()=>newSale());pageAction('new-expense',newExpense);pageAction('invite-user',inviteUser);pageAction('change-password',changePassword);pageAction('link-google',()=>location.assign('/api/auth/google/start?mode=link'));
-pageAction('export-tickets',()=>window.open('/api/export/tickets.csv','_blank','noopener,noreferrer'));pageAction('export-sales',()=>window.open('/api/export/sales.csv','_blank','noopener,noreferrer'));
-pageAction('go-sales',()=>setPage('sales'));
-window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-boot();
+async function newSale(prefill=null){app.tickets=await api('/tickets');const opts=ticketOptions();if(opts.length<=1){notify('No available tickets to sell.');return}
+ openModal('Record a completed sale',[
+  {name:'ticket_id',label:'Ticket lot',type:'select',value:prefill||'',options:opts,wide:true,required:true},
+  {name:'quantity',label:'Tickets sold',type:'number',min:1,max:1000,value:1,required:true},
+  {name:'sold_at',label:'Sale date',type:'datetime-local',value:inputDate(),required:true},
+  {name:'revenue',label:'Total sale revenue',type:'number',min:0,step:'.01',value:'0',required:true},
+  {name:'fees',label:'Total marketplace fees',type:'number',min:0,step:'.01',value:'0'},
+  {name:'currency',label:'Currency',type:'select',options:COMMON_CURRENCIES},
+  {name:'channel',label:'Sales channel',placeholder:'viagogo, TicketSwap…',value:'Direct'},
+  {name:'reference',label:'Order reference',placeholder:'Optional order ID'}
+ ],async v=>{
+  if(!v.ticket_id)throw Error('Choose a ticket lot.');v.ticket_id=Number(v.ticket_id);v.quantity=Number(v.quantity);v.sold_at=isoLocal(v.sold_at);
+  await api('/sales',{method:'POST',body:v});notify('Sale recorded. Available ticket quantity updated.');
+ },'Record sale');
+}
+async function newExpense(){app.events=await api('/events');
+ openModal('Record a new expense',[
+  {name:'title',label:'Expense description',placeholder:'Hosting, delivery, service fee…',required:true,wide:true},
+  {name:'event_id',label:'Associated event',type:'select',options:[{value:'',label:'General expense / no specific event'},...eventOptions().slice(1)]},
+  {name:'amount',label:'Total expense',type:'number',step:'.01',min:0,value:0,required:true},
+  {name:'currency',label:'Currency',type:'select',options:COMMON_CURRENCIES}
+ ],async v=>{v.event_id=v.event_id?Number(v.event_id):null;await api('/expenses',{method:'POST',body:v});notify('Expense recorded.');},'Save expense');
+}
+async function managePdf(ticketId){
+ const list=await api('/tickets/'+ticketId+'/pdfs');
+ $('#modal-title').textContent='Encrypted PDF Vault · Ticket #'+ticketId;
+ $('#modal-fields').innerHTML=`<div class="field full"><div class="file-drop">♧ &nbsp; Upload a ticket PDF (max 20 MB)<input id="upload-pdf-input" accept="application/pdf,.pdf" type="file"><small>Files are encrypted and available only to your own account.</small></div></div><div class="field full"><strong>Saved attachments</strong>${list.length?list.map(a=>`<div class="secure-row"><div><strong>${escapeHtml(a.filename)}</strong><small>${Math.round(a.size/1024)} KB · ${niceDate(a.created_at)}</small></div><button class="mini-btn" type="button" data-pdf-download="${a.id}">Download ↗</button></div>`).join(''):'<p style="color:#92a2be">No documents attached yet.</p>'}</div>`;
+ $('#modal-save').textContent='Upload PDF';toggle('#modal-backdrop',true);
+ $('#modal-fields').querySelectorAll('[data-pdf-download]').forEach(el=>el.addEventListener('click',()=>window.open('/api/tickets/'+ticketId+'/pdfs/'+el.dataset.pdfDownload,'_blank','noopener,noreferrer')));
+ $('#modal-form').onsubmit=async e=>{
+  e.preventDefault();const file=$('#upload-pdf-input').files?.[0];if(!file){notify('Choose a PDF first.');return}
+  const form=new FormData();form.append('file',file);const save=$('#modal-save');save.disabled=true;
+  try{await api('/tickets/'+ticketId+'/pdf',{method:'POST',body:form});notify('PDF encrypted and saved.');closeModal();navigate('tickets')}
+  catch(err){notifyError(err)}finally{save.disabled=false}
+ };
+}
+async function changePassword(){openModal('Change account password',[
+ {name:'current_password',label:'Current password',type:'password',wide:true,placeholder:'Leave blank if you registered using Google'},
+ {name:'new_password',label:'New password (12+ characters including letters & numbers)',type:'password',wide:true,required:true}
+ ],async v=>{await api('/me/password',{method:'POST',body:v});notify('Password updated. Other sessions were revoked.');},'Update password')}
+async function changeName(){const me=await api('/me');openModal('Update your profile',[
+ {name:'name',label:'Display name',required:true,wide:true,value:me.name}
+ ],async v=>{await api('/me',{method:'PATCH',body:v});await loadAuthState();notify('Profile updated.');},'Save profile')}
+function dispatchAction(action,id){
+ if(action==='new-event')return newEvent();
+ if(action==='edit-event')return api('/events/'+id).then(newEvent);
+ if(action==='new-ticket')return newTicket();
+ if(action==='new-listing')return newListing();
+ if(action==='edit-listing')return newListing(app.listings.find(x=>x.id===Number(id)));
+ if(action==='new-sale')return newSale();
+ if(action==='sale-ticket')return newSale(Number(id));
+ if(action==='new-expense')return newExpense();
+ if(action==='manage-pdf')return managePdf(Number(id));
+ if(action==='go-analytics')return navigate('analytics');
+ if(action==='go-sales')return navigate('sales');
+ if(action==='go-events')return navigate('events');
+ if(action==='change-password')return changePassword();
+ if(action==='edit-profile')return changeName();
+ if(action==='connect-google')return window.location.assign('/api/auth/google/start?mode=link');
+ if(action==='sign-out')return signOut();
+ if(action.startsWith('export-'))return window.open('/api/export/'+action.slice(7)+'.csv','_blank','noopener,noreferrer');
+}
+async function signOut(){try{await api('/auth/logout',{method:'POST'});app.user=null;app.csrf='';showAuth('login');notify('Signed out safely.')}catch(err){notifyError(err)}}
+function toggleSidebar(){const open=$('#sidebar').classList.toggle('open');toggle('#mobile-scrim',open)}
+$('#menu-toggle').addEventListener('click',toggleSidebar);$('#mobile-scrim').addEventListener('click',toggleSidebar);
+$('#sidebar-nav').addEventListener('click',e=>{const btn=e.target.closest('[data-page]');if(btn)navigate(btn.dataset.page)});
+$('#page-content').addEventListener('click',async e=>{const btn=e.target.closest('[data-action]');if(!btn)return;try{await dispatchAction(btn.dataset.action,btn.dataset.id)}catch(err){notifyError(err)}});
+$('#sidebar-account').addEventListener('click',()=>navigate('settings'));$('#top-avatar').addEventListener('click',()=>navigate('settings'));
+$('#auth-form').addEventListener('submit',authSubmit);$('#password-toggle').addEventListener('click',()=>{$('#auth-password').type=$('#auth-password').type==='password'?'text':'password'});
+$('#forgot-link').addEventListener('click',()=>showAuth('forgot'));
+$('#google-button').addEventListener('click',()=>window.location.assign('/api/auth/google/start'));
+$('#modal-close').addEventListener('click',closeModal);$('#modal-cancel').addEventListener('click',closeModal);
+$('#modal-backdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+$('#global-search').addEventListener('keydown',e=>{if(e.key==='Enter'){app.search=e.target.value.trim();navigate('tickets')}});
+window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#global-search').focus()}if(e.key==='Escape')closeModal()});
+loadAuthState().catch(notifyError);

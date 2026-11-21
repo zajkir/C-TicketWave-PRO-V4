@@ -1,101 +1,81 @@
-# C TicketWave PRO V4 — Ticket Operations Workspace
+# C TicketWave PRO V5 · Personal Ticket Workspaces
 
-Profesionálna aplikácia pre správu vstupeniek, eventov, inzerátov a predaja. V4 má kompletne prepracované tmavomodré rozhranie s logom **C** a je navrhnutá pre tím s vlastnými prihlasovacími účtami.
+A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
 
-## Rýchle spustenie na Windows
+## What changed from V4
 
-1. Nainštaluj **Python 3.11 alebo novší** a zapni `Add Python to PATH`.
-2. Rozbaľ ZIP do samostatného priečinka, napr. `C:\TicketWave-V4`.
-3. Dvojklikom spusti **`start-windows.bat`**. Pri prvom štarte sa nainštalujú potrebné Python balíky do `.venv`.
-4. Otvor **http://127.0.0.1:8765**. Aplikácia je pre bezpečnosť dostupná iba z tvojho počítača.
-5. Pri prvom spustení vytvor administrátorský účet (heslo aspoň 12 znakov). Potom cez **Team Members** pozývaj kolegov.
-6. Vytvor **Events**, potom pridaj vstupenky v **Ticket Inventory**, prípadne lokálne inzeráty v **Listings**. Dokončené predaje zapisuj do **Sales & Profit**.
+**V4 used one shared team database. V5 does not.** Every account has its own SQLite inventory database, its own encrypted PDF vault and its own records. No one can view another user's tickets, events, PDFs, listings, sales or expenses via the public UI/API. A Google account can now **register itself**, without a team invitation. Password-based signup requires email verification. Previous shared team roles have been removed from the application.
 
-Spúšťací súbor musí zostať otvorený, kým aplikáciu používaš. Pre dlhodobé tímové používanie použi HTTPS server s trvalým úložiskom; v projekte je aj Docker konfigurácia. Neposkytuj prístup na internet priamo k lokálnemu Windows portu.
+## Features
 
-## Novinky V4
+- Self-service registration through **Google** (verified OpenID Connect) or **email + password** (SMTP verification)
+- Password login, forgotten-password email reset, link Google to an existing password account, profile editing, session logout and Argon2 hashing
+- Server-controlled, per-user SQLite files: `data/users/<user_uuid>/inventory.sqlite3`
+- Per-user Fernet-encrypted ticket PDFs: `data/users/<user_uuid>/vault/` and `.encryption_key`
+- Independent events, ticket lots/seat locations, multi-PDF attachments, local listings, sales, expenses, CSV exports, audit history
+- Atomic stock deductions when sales are recorded; prevents overselling
+- Account-specific analytics, clear net-profit and ROI calculation for EUR, recent sales and a revenue trend visualization
+- Fully reworked login, responsive dashboard, tables, filtering, modals, navigation, mobile layout and account management
+- Includes API tests that prove **two different users cannot read each other's data**
 
-- **Nová navigácia:** Overview, Events, Ticket Inventory, Listings, Sales & Profit, Expenses, Team Members, Activity Log, My Account.
-- **Vizuálny redesign:** konzistentná tmavomodrá paleta, väčšie KPI, upravené tabuľky, moderný login, nové SVG ikony, mobilné menu a responzívny layout.
-- **Sales & Profit:** žiadne fialové „admit one“ recap kartičky. Nahradené profesionálnou tabuľkou eventov, ziskovosťou, ROI a rozklikávacím presným finančným rozpisom.
-- **Rýchle vyhľadávanie:** hore hľadaj lístky cez **Ctrl+K** + Enter; v Ticket Inventory funguje okamžité filtrovanie bez opakovaného sťahovania databázy pri každom stlačení klávesu.
-- **Inventory overview:** dostupné kusy, predané lístky, počet lotov a šifrovaných PDF príloh.
-- **My Account:** správa hesla a vývoz inventára či predajov (pre Manager/Admin).
-- **Jasnejšie onboarding tlačidlá:** novému workspace bez eventov aplikácia ponúkne najprv vytvorenie eventu.
-- **Vypnuté nechcené časti:** Integrations & Settings, Find Events, Event Watchlist a staré Event Recaps už nie sú v rozhraní. Automatické pozadie watchlistu je tiež **predvolene vypnuté**. Staré backendové tabuľky/API zostali zachované z dôvodu kompatibility, aby sa nestratili žiadne pôvodné dáta.
+## Local Windows run
 
-## Čo je funkčne prepojené s backendom
+1. Install Python 3.11 or newer.
+2. Extract this project into a **new** folder; do not overwrite the existing V4 folder.
+3. Double-click `start-windows.bat` and open http://127.0.0.1:8765.
+4. Local developer mode permits email verification without an external SMTP server. This mode must NEVER be enabled on a public server.
+5. Register two test accounts and confirm that each has its own inventory.
 
-| Funkcia | Ako funguje |
-|---|---|
-| Bezpečné účty | Prihlasovanie, Argon2id hashovanie hesiel, osobné sessions, CSRF ochrana a audit |
-| Tím | Role Admin, Manager, Operator, Viewer; pozvánky a jednorazové resetovanie hesla |
-| Databáza | Trvalá SQLite databáza v `data/ticketwave.sqlite3` |
-| Eventy | Vytváranie a prehľad podujatí, termínov a miest |
-| Ticket Inventory | Loty, sekcie, rady, sedadlá, stav, kusy, nákupná cena |
-| PDF trezor | Šifrované ukladanie PDF vo `data/vault/`, kontrola duplicitných príloh |
-| Listings | Lokálne drafty, marketplace ID, stav, cena, poplatky, ochrana pred duplicitami |
-| Sales & Profit | Evidencia predajov, automatický odpočet predaných kusov, reálne finančné prehľady |
-| Expenses | Náklady na eventy, evidované meny, dátumy a popisy |
-| Audit | Zmeny v záznamoch pripísané používateľovi |
-| Export | CSV inventára a predaja |
+## Production deployment on Bot-Hosting.net
 
-### Ako sa počíta zisk
+1. Create a new **Python Application** using this repository, branch `main`.
+2. Startup: `python main.py`; install: `pip install -r requirements.txt`.
+3. In **Environment / Secrets** configure:
+   - `CTW_DATA_DIR=/home/container/data` **only after confirming this path is persistent through redeployments**
+   - `CTW_PUBLIC_BASE_URL=https://YOUR-REAL-APP-DOMAIN`
+   - `CTW_SECURE_COOKIES=1`
+   - **Google signup:** `CTW_GOOGLE_CLIENT_ID`, `CTW_GOOGLE_CLIENT_SECRET`
+   - **Email signup (optional):** `CTW_SMTP_HOST`, `CTW_SMTP_PORT`, `CTW_SMTP_TLS`, `CTW_SMTP_FROM`, `CTW_SMTP_USER`, `CTW_SMTP_PASSWORD`
+4. In Google Cloud, configure a Web OAuth client. Add the exact **Authorized redirect URI**: `https://YOUR-REAL-APP-DOMAIN/api/auth/google/callback`. Use Google Auth Platform's Branding / Audience pages and configure Test Users if in Testing mode.
+5. Under Bot-Hosting.net Domains, enable and check HTTPS. The website must be accessible with `https://`.
+6. Ensure the hosting provider can make outbound HTTPS calls to Google OAuth. Restart the deployment.
+7. Test Google registration with TWO new distinct Google accounts and verify they see different empty workspaces.
+8. Backup **the entire `CTW_DATA_DIR`** to separate secure storage, including SQLite databases, vault files and `.encryption_key` files. Always stop the service or use an SQLite-consistent backup before copying live DB files.
 
-**Čistý zisk v EUR = príjmy z predaných vstupeniek − poplatky marketplace − nákupná cena predaných kusov − EUR prevádzkové náklady.** ROI na úrovni eventu = čistý zisk / (cena predaných vstupeniek + eventové náklady) × 100 %. Keď je investícia nulová, ukáže sa pomlčka. Iné meny sa **neprepočítavajú automaticky na EUR**.
+**Important:** Google sign-in will only appear when OAuth config is valid. Email/password registration is disabled on public hosting unless SMTP is configured. One can work if the other is not available. The project does **not** ask for Gmail inbox or Gmail API access.
 
-**Dôležité:** aplikácia sama nepublikuje inzeráty na Viagogo. Lokálne listingy fungujú, ale live Viagogo publikovanie vyžaduje schválené seller API oprávnenia a nie je súčasťou tejto verzie. Ticketmaster live vyhľadávanie a jeho konfigurácia sú v V4 skryté na tvoju žiadosť; eventy sa vytvárajú v aplikácii manuálne.
+### Privacy and security model
 
-## Prechod z V3 na V4 bez straty údajov
+- One global `identity.sqlite3` stores users, sessions and Google account links.
+- Every user account is assigned a random 32-character ID and an **independent inventory.sqlite3** file.
+- Inventory access uses **only the authenticated ID from the session cookie**. Request parameters never control data paths.
+- PDF files are encrypted at rest using a different key per user. A user can download only PDFs in their own database.
+- The system validates user writes with an HTTP-only session cookie and a CSRF token. Public deployments must use HTTPS and Secure cookies.
+- Open registration is intentional. Production should include backups, quotas, abuse monitoring, rate limiting at the reverse proxy/WAF, email deliverability checks and a security audit prior to storing valuable third-party tickets.
+- V5 is meant for one hosted service with many *separate personal workspaces*. It is not an invitation-based shared team system anymore.
 
-1. **Vypni starú aj novú aplikáciu.** Zálohuj celý pôvodný priečinok `data/` z V3, nie iba samotný `.sqlite3` súbor.
-2. Rozbaľ V4 do nového priečinka.
-3. Skopíruj **celý** pôvodný `data/` do koreňa V4. Musí obsahovať `ticketwave.sqlite3`, `vault/` a predovšetkým **`.encryption_key`**.
-4. Spusti `start-windows.bat` v V4 a prihlás sa so svojím existujúcim účtom.
-5. Skontroluj počet eventov, lístkov, predajov, používateľov a či idú PDF otvárať.
-6. Starý priečinok a zálohu V3 nechaj uložené do času, kým si overíš úspešnú migráciu.
+### Migration from V4 (critical)
 
-**Nikdy nestrácaj `.encryption_key`**. Bez tohto súboru už nie je možné dešifrovať uložené PDF ani ďalšie chránené údaje. Pred migráciou server vypni kvôli SQLite WAL súborom.
+**Do not copy the V4 `data/ticketwave.sqlite3` directly into V5** — V4 contained multiple members' shared workspace data and its schema is different. V5 intentionally starts with new, empty private workspaces.
 
-## Prevádzka a bezpečnosť
+**No automatic migration of shared V4 data is performed**, to prevent accidentally assigning multiple people's tickets or PDF files to the wrong person. Keep a backup of the entire V4 data directory (including `vault/` and `.encryption_key`) in a safe location. If you want to import V4 ticket data, first choose one authorized owner and perform an owner-reviewed, offline migration. Do not put the V4 data directory in a public GitHub repository.
 
-- Heslá sa neskladujú čitateľne, PDF sú šifrované a každý zamestnanec má vlastný účet.
-- SQLite je vhodná pre menšie dôveryhodné tímy. Pre veľkú SaaS aplikáciu pre nesúvisiace firmy treba samostatné tenantovanie a ďalšie bezpečnostné opatrenia (MFA, monitoring, nezávislý audit, produkčné migrácie DB).
-- Na verejnom serveri používaj **HTTPS**, bezpečné cookies (`CTW_SECURE_COOKIES=1`), dôslednú konfiguráciu povolených originov, zálohy a autentifikované prístupy.
-- Zálohuj **celý `data/`** vrátane skrytého súboru `.encryption_key` a encrypted PDF `vault/`; zálohy drž mimo verejného priečinka projektu.
-- Nepridávaj databázu, kľúče ani zákaznícke PDF do GitHubu. `.gitignore` pred nimi chráni.
-- Aplikácia je lokálny tímový produkt, nie nezávisle bezpečnostne auditovaná produkčná SaaS služba.
+### Ticket platforms
 
-## Docker
+The application stores **local listing drafts** and offers sales tracking. It does **not** automatically post to Viagogo or generate Ticketmaster registrations. Those integrations need approved API access and a separate supported implementation.
 
-V projekte sú `Dockerfile` a `docker-compose.yml`. Pre Docker nastav silný `CTW_BOOTSTRAP_CODE`; reverzná proxy s HTTPS je nutná, ak má aplikácia slúžiť viacerým ľuďom mimo lokálnej siete. Persistentné dáta sú v docker volume `ticketwave_data`.
+### Reboots, restarts and 24/7
 
-## Testovanie
+Application code is safe to pull from GitHub, but the database is *not* stored there. For reliable uptime, the hosting plan must be active and its persistent volume must survive restarts and redeployments. Free plans may have renewal/uptime conditions; this code by itself does not guarantee 24/7 availability.
+
+## Testing
 
 ```bash
-python -m pip install -r requirements.txt pytest
-python -m pytest -q tests
+python -m pip install -r requirements.txt
+python -m pytest -q
 node --check static/app.js
 ```
 
-Aktuálne testy pokrývajú autentifikáciu, práva, inventár, PDF, inzeráty, predaje, finančné výpočty, API regresie a odstránené položky V4. Browser UI sa testovalo aj cez render s ukážkovými dátami, pretože testovací prehliadač nepovoľoval prístup na lokálnu HTTP adresu. To nenahrádza finálne testy s reálnou hostovanou inštaláciou.
+Private-data tests include registration, two account-specific databases, independently encrypted PDF files, CSRF protection, non-existence of cross-account ticket IDs and atomic sale stock controls.
 
-## Štruktúra projektu
-
-- `app.py` – FastAPI backend, SQLite, auth, business logic
-- `static/index.html` – aplikácia a prihlasovanie
-- `static/style.css`, `static/v3.css`, `static/v4.css` – stylesheety; V4 je finálna prezentačná vrstva
-- `static/app.js` – funkčná logika frontend-u
-- `static/logo.png` – logo C
-- `tests/` – integračné a regresné testy
-- `screenshots/` – **testovacie** náhľady V4, nie skutočné predajné dáta používateľa
-- `start-windows.bat` – spustenie na Windows
-
-**Verzia:** 4.0.0 · November 2026
-
-
-## Prihlasovanie cez Google / Gmail
-
-Nová voliteľná funkcia **Continue with Google**: prihlasovanie pre existujúcich členov, pripojenie Google účtu v **My Account** a registrácia nových členov iba cez administrátorskú pozvánku. Bez pozvánky Google nedáva prístup k workspace. Účty a role sú uložené v existujúcej databáze.
-
-Google Cloud OAuth Client ID/secret sa nastavujú **iba v hostingu**. Kompletný postup je v [GOOGLE-LOGIN-SETUP.md](GOOGLE-LOGIN-SETUP.md). Redirect URI musí mať tvar `https://YOUR-REAL-DOMAIN/api/auth/google/callback`; vyžaduje verejnú HTTPS doménu a bezpečné cookies. Prihlásenie využíva OpenID Connect a nežiada o prístup k Gmail schránke.
+**Test status:** Local backend integration tests pass. The UI was inspected with representative mock data, not real customer data. Live Google OAuth/SMTP and a complete public deployment cannot be tested without your authorized credentials and hosting domain.
