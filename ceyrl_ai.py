@@ -199,7 +199,8 @@ def safe_inventory(db, include_details=False):
         data["ticket_lots_preview"] = [dict(row) for row in db.execute("""
             SELECT e.title AS event_title,t.provider,t.ticket_type,
             t.section,t.row_label,t.seats,t.quantity,t.sold_quantity,
-            t.currency,t.purchase_cents
+            t.currency,t.purchase_cents,
+            (SELECT COUNT(*) FROM attachments a WHERE a.ticket_id=t.id) AS pdf_count
             FROM tickets t JOIN events e ON e.id=t.event_id
             ORDER BY t.id DESC LIMIT 30""").fetchall()]
         data["privacy_note"] = "Ticket details are explicitly shared for this question only; returned events/ticket lots are a limited preview, not all records."
