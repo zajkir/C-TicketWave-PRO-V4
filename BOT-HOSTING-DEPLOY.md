@@ -1,4 +1,4 @@
-# C TicketWave V5 · Bot-Hosting.net Quick Deploy
+# Ceyrl V5 · Bot-Hosting.net Quick Deploy
 
 1. GitHub repo `zajkir/C-TicketWave-PRO-V4` (the repository name remains V4 for continuity; code version is **V5**), branch `main`.
 2. New **Application → Python** deployment.
