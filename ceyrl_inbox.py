@@ -598,3 +598,31 @@ def install_magic_inbox(app,*,user_db,connection,select,personal_key,storage_dir
             if re.fullmatch(r"inbox/[a-f0-9]{40}\.encrypted",name):
                 (storage_dir(user["id"])/"vault"/name).unlink(missing_ok=True)
         return {"ok":True}
+
+
+    @app.delete("/api/inbox/drafts/{draft_id}")
+    def delete_draft(draft_id:int,request:Request):
+        user,path=user_db(request,True)
+        orphaned=[]
+        with connection(path,True) as db:
+            _user_tables(db)
+            row=select(db,"SELECT encrypted_payload FROM magic_inbox_drafts WHERE id=?",
+                       (draft_id,),True)
+            if not row:
+                raise HTTPException(404,"Inbox confirmation not found.")
+            try:
+                payload=json.loads(personal_key(user["id"]).decrypt(row["encrypted_payload"]))
+            except Exception:
+                raise HTTPException(500,"Cannot decrypt this inbox message.")
+            for item in payload.get("pdfs",[]):
+                name=item.get("path","")
+                if not re.fullmatch(r"inbox/[a-f0-9]{40}\.encrypted",name):
+                    continue
+                # Imported PDFs now belong to the ticket, never delete them.
+                linked=db.execute("SELECT 1 FROM attachments WHERE path=?",(name,)).fetchone()
+                if not linked:
+                    orphaned.append(name)
+            db.execute("DELETE FROM magic_inbox_drafts WHERE id=?",(draft_id,))
+        for name in orphaned:
+            (storage_dir(user["id"])/"vault"/name).unlink(missing_ok=True)
+        return {"ok":True,"notice":"Inbox message deleted; approved tickets and their attached PDFs remain unchanged."}
