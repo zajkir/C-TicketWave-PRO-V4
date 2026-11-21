@@ -1,4 +1,4 @@
-"""C TicketWave V5 — private-by-design, per-user ticket inventory application.
+"""Ceyrl — private-by-design, per-user ticket inventory application.
 
 Each authenticated account is mapped server-side to its own SQLite database and
 encrypted PDF vault. Cross-user ticket IDs are not meaningful outside their owner DB.
@@ -279,7 +279,7 @@ async def lifespan(_app):
     yield
 
 
-app = FastAPI(title='C TicketWave V5', version='5.0.0', docs_url=None, redoc_url=None, lifespan=lifespan)
+app = FastAPI(title='Ceyrl', version='5.0.0', docs_url=None, redoc_url=None, lifespan=lifespan)
 app.mount('/static', StaticFiles(directory=BASE / 'static'), name='static')
 
 
@@ -429,7 +429,7 @@ def home():
 
 @app.get('/health')
 def health():
-    return {'status':'ok','service':'C TicketWave V5'}
+    return {'status':'ok','service':'Ceyrl'}
 
 
 @app.get('/api/auth/state')
@@ -464,8 +464,8 @@ def register(payload: Register, request: Request):
     if DEV_TOKENS:
         # Available only when explicit local-development flag is enabled.
         return {'ok':True,'dev_verification_token':token,'message':'Development account created.'}
-    email_link(email, 'Verify your C TicketWave account',
-               'Welcome to C TicketWave! Verify your account using this link:\n\n' +
+    email_link(email, 'Verify your Ceyrl account',
+               'Welcome to Ceyrl! Verify your account using this link:\n\n' +
                BOOTSTRAP + '/?verify=' + token + '\n\nThis link expires in 60 minutes.')
     return {'ok':True,'message':'Check your email for a verification link.'}
 
@@ -534,7 +534,7 @@ def forgot(payload: Forgot, request: Request):
         with connection(AUTH_DB,True) as db:
             db.execute('INSERT INTO verification_tokens VALUES (?,?,?,?)',
                        (digest(token),user['id'],'reset',plus(minutes=30)))
-        email_link(email,'Reset C TicketWave password',
+        email_link(email,'Reset Ceyrl password',
                    'Reset your password with the following link (30 minutes):\n\n'+
                    BOOTSTRAP+'/?reset='+token)
     return {'ok':True,'message':'If your account supports password reset, an email has been sent.'}
