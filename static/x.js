@@ -93,7 +93,7 @@ async function renderXShield(){
   if(app.page!=='shield')return;
   root.innerHTML=heading('Double-Sale Shield',
     'A safety layer for overlapping seats, duplicate listings and sold-out stock.',
-    button('Refresh checks','x-refresh-shield','outline'))+
+    '<button type="button" class="btn outline" data-x-action="x-refresh-shield">Refresh checks ↻</button>')+
     '<section class="x-hero x-shield-hero"><div><span class="x-eyebrow">CEYRL / INVENTORY SAFETY</span>'+
     '<h2>Protect every seat.<br><em>Prevent costly overlap.</em></h2>'+
     '<p>Exact seat conflicts are blocked when adding ticket lots. After you record a sale, local active listings for that lot are paused automatically.</p>'+
@@ -189,7 +189,7 @@ async function renderXRadar(){
   if(app.page!=='radar')return;
   root.innerHTML=heading('Event Radar',
     'Ticketmaster Discovery API event lookup and your own watchlist.',
-    button('Connect API key','x-radar-key','outline'))+
+    '<button type="button" class="btn outline" data-x-action="x-radar-key">Connect API key ↗</button>')+
     '<section class="x-hero x-radar-hero"><div><span class="x-eyebrow">CEYRL / EVENT DISCOVERY</span>'+
     '<h2>Find what’s next.<br><em>Stay one step ahead.</em></h2>'+
     '<p>Search upcoming events and follow artists or event keywords. Import verified listings into your personal calendar with one click.</p>'+
