@@ -37,6 +37,9 @@ def google_config():
     local_host = parsed.hostname in ('localhost', '127.0.0.1', '::1')
     if parsed.scheme != 'https' and not (local_host and parsed.scheme == 'http'):
         return None
+    # For public HTTPS deployments Google OAuth must only use Secure cookies.
+    if not local_host and os.getenv('CTW_SECURE_COOKIES') != '1':
+        return None
     return {
         'client_id': client_id,
         'client_secret': client_secret,
@@ -189,7 +192,7 @@ def install_google_auth(app, *, db, fetch, auth, issue_session, set_session_cook
             display_name = str(claims.get('name') or email.split('@')[0])[:100]
             if not subject or len(subject) > 255 or not email or len(email) > 200:
                 return google_error('invalid-profile')
-        except (httpx.HTTPError, ValueError, KeyError, TypeError, Exception):
+        except Exception:
             # Do not reflect provider errors or sensitive identifiers to the client.
             return google_error('provider')
 
