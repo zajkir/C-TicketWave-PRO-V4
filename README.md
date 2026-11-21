@@ -2,6 +2,34 @@
 
 A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
 
+## GPT-5.4 mini Copilot – live AI integration
+
+The Copilot can now use **real GPT-5.4 mini** via OpenAI's Responses API (model ID `gpt-5.4-mini`), instead of presenting keyword-based local replies as AI.
+
+### Set up on Bot-Hosting.net
+
+1. Back up your persistent `CTW_DATA_DIR` including each account's `.encryption_key`.
+2. Create an OpenAI API project and key in [OpenAI Platform API Keys](https://platform.openai.com/api-keys). Set up separate API billing and a project-level spend/usage safeguard. ChatGPT subscriptions do not include API usage.
+3. In your hosting service **Environment / Secrets** (never in the GitHub repo) set `CTW_OPENAI_API_KEY` to your key.
+4. The model is fixed to `gpt-5.4-mini`, so older `CTW_OPENAI_MODEL` overrides are no longer used. Optional environment settings:
+   - `CTW_OPENAI_WEB_SEARCH=1` (default) enables the built-in paid web search tool. To prohibit web search entirely use `0`. At most one web tool call is permitted per answer.
+   - `CTW_OPENAI_MONTHLY_LIMIT_USD=5` (default) is an **estimated application-side global** API-usage guard. It is not a guaranteed billing cap; web pricing and token accounting can change. Also set a budget/alerts in OpenAI Platform.
+   - `CTW_OPENAI_USER_DAILY_CALLS=30` (default) caps the number of attempts by each account each UTC day, with an additional limit of four calls per minute.
+5. Restart the application, refresh the browser and open **AI Copilot**. Its connection banner reports whether a server key exists (not whether its permissions or billing have been verified). Ask a test question to verify actual provider connectivity.
+
+### Privacy and functionality
+
+- When **Use GPT-5.4 mini** is enabled, the app sends the user's question, the most recent encrypted chat turns (decrypted only in memory for that request), and numeric totals from the current user's own account. This includes counts, EUR revenue and recorded EUR fees, but does not include account emails, PDF content, secrets or attachment filenames.
+- **Include ticket details** is a separate opt-in that also shares a *limited preview* of event names/dates/venues and ticket lot fields, so users can ask specific inventory questions. Event titles are treated as untrusted data, not instructions.
+- **Web search** is an explicit toggle, enabled by default once the admin has configured GPT. When the model uses it, the response shows clickable citations to sources returned by the API. Search usage adds provider charges.
+- The server uses `store=false`; no action changes ticket inventory or creates marketplace listings. The model is a read-only adviser, not an autonomous seller. Private chat messages are encrypted with the account's existing Fernet key and stored in its personal SQLite database. Users can delete their own chat history.
+- The local helper remains available when the online switch is off, but clearly labels rule-based replies as **OFFLINE HELPER**. It does not pretend to know general facts or current information when live AI is not connected.
+- Usage estimates are recorded in a small shared usage ledger for rate/budget monitoring; no conversation contents are stored there. User chat content remains isolated. Failed/unknown usage can be conservatively counted toward the estimated budget.
+
+**Troubleshooting:** `503` often means no API key, invalid API credentials or insufficient model access. `429` means rate/estimated budget/provider quota was exceeded. `502`/ `504` can indicate provider errors or networking timeouts. The app never prints the secret to a browser response. Live API calls require your account's own credentials and are not made by automated tests.
+
+---
+
 ## Ceyrl X – modules 1, 3, 5 and 6 (November 2026)
 
 This release adds four functional, authenticated modules on top of Ceyrl V6, without changing existing account IDs, event IDs or the V5 database structure. Each new feature creates its own additive tables in the **currently logged-in user's** private SQLite database, only as needed.
