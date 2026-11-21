@@ -2,6 +2,38 @@
 
 A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
 
+## Magic Inbox — purchase confirmations by email
+
+Magic Inbox is now a working, account-isolated feature. Open **Magic Inbox** from the workspace sidebar. Every imported email first becomes a **private draft**, never a real ticket or marketplace listing. The user must review event, venue, date/time, section, seats, quantity, unit price, currency, ticket type and transfer rules, then explicitly approve the import.
+
+### Use immediately, without email integration
+
+- Save an order confirmation as a **.eml** email file (max 3 MB), then upload it in the Magic Inbox page. Text is extracted automatically. Up to **3 PDF attachments** (each up to 4 MB; max 9 MB combined) may be staged in the account's encrypted vault. PDF bytes are never interpreted as active/valid tickets automatically.
+- Or copy/paste the plain text and subject from a purchase confirmation.
+- The parser uses conservative labeled fields, such as \`Event:\`, \`Date:\`, \`Venue:\`, \`Section:\`, \`Row:\`, \`Seats:\`, \`Quantity:\`, \`Price per ticket:\`, and \`Total paid:\`. Missing values stay blank. **Order totals never silently become per-ticket purchase prices.** Unsupported/ambiguous date formats must be confirmed by the user. The local extractor requires no AI credits and sends nothing to OpenAI.
+- Click any draft, verify the original email, edit fields, confirm the acknowledgment checkbox, and import. You may create an event or attach tickets to an existing event. Only a successful approval inserts events, tickets and chosen PDF attachments.
+- Repeated emails with the same sender/subject/message ID/body are deduplicated **inside each user's own account**. Dismissed drafts cannot be approved; their unimported staged PDFs are deleted.
+
+### Optional automatic forwarding via Mailgun Routes
+
+**Requires an inbound email domain and provider account.** Ceyrl does not create free public mailboxes or change MX records automatically. The existing web URL \`https://2ahpxgae79.apps.bot-hosting.cloud\` is the **app endpoint**, not necessarily an email domain.
+
+1. Obtain an inbound **subdomain** you control, e.g. \`inbox.example.com\`, and configure its MX records for Mailgun according to your Mailgun region/account. Do not replace your main domain's MX if you use another email service there.
+2. Configure Mailgun **Routes** to match recipients at that inbox subdomain and take the \`forward()\` action to \`https://2ahpxgae79.apps.bot-hosting.cloud/api/inbox/mailgun\` (this endpoint intentionally does not end in \`json\` or \`mime\`).
+3. Find the **HTTP Webhook Signing Key** under Mailgun Settings → API Security. It is **not** your Mailgun API key. In Bot-Hosting.net → Environment / Secrets configure these exact variables, then restart Ceyrl:
+   - \`CTW_MAGIC_INBOX_DOMAIN=inbox.example.com\`
+   - \`CTW_MAILGUN_WEBHOOK_SIGNING_KEY=<Mailgun HTTP webhook signing key>\`
+4. After restarting, each user opens Magic Inbox. Ceyrl provides that user with a distinct, unguessable \`inbox-...@inbox.example.com\` address. Forward a purchase confirmation to that address, or set auto-forwarding in the user's authorized email account. They may rotate the address at any time; the previous alias immediately stops working.
+5. A signed Mailgun \`multipart/form-data\` or \`application/x-www-form-urlencoded\` inbound Route POST is verified with **HMAC-SHA256(timestamp + token)** and a **15-minute timestamp window** before recipient lookup. JSON-payload routes are deliberately unsupported. Messages from invalid/unknown aliases do not enter users' inventories.
+
+**Security and operations:** Each user's message subject, sender, extracted content and PDF attachment metadata are encrypted with the personal Fernet key already used for their PDF vault. Only the randomly generated inbox address is stored in the central account DB to route inbound mail to the correct authenticated account. Avoid publishing this address widely; anyone who knows it may send **untrusted email**, and the fact an email arrived is **not proof** that a ticket or purchase is legitimate. Always review. Webhook requests are limited to 12 MB; draft inboxes are limited to 250 records per user. Files and encryption keys MUST be backed up together. Do not expose the Mailgun signing secret or email/AI credentials in GitHub or screenshots. Inbound email providers may charge separate fees.
+
+For Mailgun provider details see its [Inbound HTTP Route docs](https://documentation.mailgun.com/docs/mailgun/user-manual/receive-forward-store/receive-http) and [webhook verification instructions](https://documentation.mailgun.com/docs/mailgun/user-manual/webhooks/securing-webhooks).
+
+**Not implemented in this version:** automatic mailbox provisioning without an inbound email provider; Gmail/Outlook OAuth mailbox syncing; arbitrary PDF OCR/AI extraction; auto-publishing marketplace listings; automatic verification that a ticket is genuine or transferable. The module strictly processes email text and PDF *attachments*, then requires owner approval.
+
+---
+
 ## GPT-5.4 mini Copilot – live AI integration
 
 The Copilot can now use **real GPT-5.4 mini** via OpenAI's Responses API (model ID `gpt-5.4-mini`), instead of presenting keyword-based local replies as AI.
