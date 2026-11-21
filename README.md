@@ -92,3 +92,10 @@ Aktuálne testy pokrývajú autentifikáciu, práva, inventár, PDF, inzeráty, 
 - `start-windows.bat` – spustenie na Windows
 
 **Verzia:** 4.0.0 · November 2026
+
+
+## Prihlasovanie cez Google / Gmail
+
+Nová voliteľná funkcia **Continue with Google**: prihlasovanie pre existujúcich členov, pripojenie Google účtu v **My Account** a registrácia nových členov iba cez administrátorskú pozvánku. Bez pozvánky Google nedáva prístup k workspace. Účty a role sú uložené v existujúcej databáze.
+
+Google Cloud OAuth Client ID/secret sa nastavujú **iba v hostingu**. Kompletný postup je v [GOOGLE-LOGIN-SETUP.md](GOOGLE-LOGIN-SETUP.md). Redirect URI musí mať tvar `https://YOUR-REAL-DOMAIN/api/auth/google/callback`; vyžaduje verejnú HTTPS doménu a bezpečné cookies. Prihlásenie využíva OpenID Connect a nežiada o prístup k Gmail schránke.
