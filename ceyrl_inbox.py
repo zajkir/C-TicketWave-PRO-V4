@@ -222,6 +222,11 @@ def extract_candidate(subject,body):
     currency="EUR"
     unit=_field(body,"price",80)
     total=_field(body,"total",80)
+    if not total:
+        # Many stores put the total on the same line as the order description.
+        match=re.search(r"(?i)\b(?:total paid|order total|total price|grand total|celkom|spolu)\s*:\s*([^\n]{1,70})",body)
+        if match:
+            total=match.group(1).strip()[:80]
     currency_text=" ".join((unit,total,_field(body,"currency",20))).upper()
     for key,mark in (("GBP","GBP"),("USD","USD"),("CZK","CZK"),("EUR","EUR"),
                      ("PLN","PLN"),("CHF","CHF")):
