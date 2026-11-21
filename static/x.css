@@ -99,3 +99,45 @@
 @media(max-width:900px){.x-delivery-grid,.x-radar-grid{grid-template-columns:1fr}.x-stat-row{gap:9px}}
 @media(max-width:600px){.x-hero{padding:25px 20px}.x-hero-decoration{display:none}.x-stat-row{grid-template-columns:1fr 1fr}.x-stat:last-child{grid-column:1/-1}.x-feature-grid{grid-template-columns:1fr}.x-radar-form{flex-direction:column}.x-radar-form input{min-width:0}.x-chat-messages{padding:14px}.x-chat-bubble{max-width:94%}}
 @media(prefers-reduced-motion:reduce){.x-chat-wrap,.x-delivery-card{transition:none!important}}
+
+
+/* GPT-5.4 mini – authenticated state, source citations and chat controls. */
+.x-ai-status{
+  display:flex;align-items:center;gap:13px;
+  background:linear-gradient(112deg,rgba(25,59,54,.63),rgba(32,32,56,.8));
+  border:1px solid rgba(83,172,141,.42);border-radius:14px;padding:15px 19px;margin-bottom:17px;
+}
+.x-ai-status.needs-key{
+  background:linear-gradient(112deg,rgba(74,48,34,.5),rgba(44,37,55,.8));
+  border-color:rgba(209,152,93,.46);
+}
+.x-ai-status-icon{
+  display:grid;place-items:center;flex:0 0 35px;width:35px;height:35px;border-radius:10px;
+  background:rgba(80,215,169,.18);color:#9ef0cb;font-size:18px;font-weight:800
+}
+.x-ai-status.needs-key .x-ai-status-icon{background:rgba(241,176,89,.18);color:#f1ca99}
+.x-ai-status strong,.x-ai-status small{display:block}
+.x-ai-status strong{font-size:13px;color:#f3ecfa}
+.x-ai-status small{line-height:1.6;margin-top:5px;color:#afa7c1;font-size:11px}
+.x-chat-toolbar{padding:17px 21px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  border-bottom:1px solid #484059;background:linear-gradient(110deg,#2c2740,#1b2434)}
+.x-chat-toolbar strong,.x-chat-toolbar small{display:block}
+.x-chat-toolbar strong{font-size:12px;color:#e9ddfa}
+.x-chat-toolbar small{color:#aaa3be;font-size:10px;margin-top:5px}
+.x-chat-toolbar .btn{min-height:35px;padding:7px 10px;font-size:10px}
+.x-copilot-options{justify-content:flex-start;gap:14px 26px;padding:8px 1px}
+.x-copilot-options label{white-space:nowrap}
+.x-copilot-options input:disabled{opacity:.45}
+.x-copilot-options .x-toggle-option:has(input:disabled){opacity:.6}
+.x-chat-submit{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin:9px 0}
+.x-chat-caption{font-size:11px;color:#a5a0b8;max-width:360px;line-height:1.5}
+.x-chat-citations{margin-top:13px;padding:11px 12px;border-top:1px solid rgba(123,159,162,.25);background:rgba(25,53,62,.35);border-radius:10px}
+.x-chat-citations strong{display:block;color:#a6e1d0;font-size:10px;letter-spacing:.65px;margin-bottom:7px}
+.x-chat-citations a{display:block;color:#baebdc;font-size:11px;line-height:1.6;margin:5px 0;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+.x-chat-citations a:hover{color:white}
+.x-chat-bubble p{overflow-wrap:anywhere}
+@media(max-width:600px){
+  .x-chat-toolbar{flex-wrap:wrap}
+  .x-copilot-options{gap:10px 17px}
+  .x-chat-submit .btn{width:100%}
+}
