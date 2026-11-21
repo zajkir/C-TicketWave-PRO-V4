@@ -1,4 +1,4 @@
-# C TicketWave PRO V5 · Personal Ticket Workspaces
+# Ceyrl V5 · Personal Ticket Workspaces
 
 A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
 
