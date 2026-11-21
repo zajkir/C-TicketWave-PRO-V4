@@ -1,6 +1,24 @@
-# Ceyrl V5 · Personal Ticket Workspaces
+# Ceyrl V6 · Personal Ticket Workspaces
 
 A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
+
+## Ceyrl V6 – Premium Operations Upgrade (November 2026)
+
+This is a **working feature upgrade**, not a mockup. The existing V5 login, Google OAuth flow, per-user SQLite inventories and PDF encryption remain intact. V6 adds these verified source changes:
+
+- **Action Center** in the sidebar: operational alerts for upcoming events (within 7 days), ticket lots without attached PDFs (mobile-transfer tickets may not require PDFs), local draft listings and an onboarding action when no events exist.
+- **7 / 30 / 90 day Sales Intelligence** with current vs previous period metrics. These figures are based only on the authenticated user's sales.
+- **EUR financial clarity**: the V6 window **sales margin** is EUR revenue minus EUR marketplace fees minus purchase cost of sold tickets. Event expenses and non-EUR values are **excluded** from this period-specific margin. The existing Analytics/Recaps section remains the place for event-level profit including associated EUR expenses.
+- **Universal private search**: use the search button or Ctrl+K / ⌘K to search your own events, ticket lots, seat details and local listings. No external provider search, no access to other users' databases.
+- **Premium UI**: new responsive V6 stylesheet, richer typography, action dashboard, quick actions, dark indigo surfaces with violet/emerald/gold accents, keyboard-search dialog and existing optional ambient motion.
+- **Accessibility**: keyboard-operated search, semantic labels, motion pause and reduced-motion support.
+- **Regression tests**: `tests/test_v5.py`, `tests/test_v6.py`; GitHub Actions `Ceyrl application checks` runs Python tests and JavaScript syntax checks on each commit.
+
+**Update safely on Bot-Hosting.net:** Back up the entire persistent `CTW_DATA_DIR` before restarting (including `identity.sqlite3`, per-user SQLite databases, PDF vaults, and their encryption keys). Pull the latest `main` and restart the deployment; refresh the browser with Ctrl+F5. This V6 release **does not change the database schema** or add required environment variables. Keep `CTW_PUBLIC_BASE_URL`, HTTPS cookies, Google OAuth settings and SMTP settings as configured.
+
+**Limitations:** Automatic listing to Viagogo and external event imports are **not** activated in this release. V6 operational alerts are computed when the user opens the page; they do not run as scheduled notifications. For public hosting, backups, monitoring, SMTP deliverability and production security hardening remain essential.
+
+---
 
 ## What changed from V4
 
