@@ -41,7 +41,7 @@ async function renderInbox(){
     '<div class="mi-hero-stamp" aria-hidden="true"><span>✉</span><strong>MAGIC INBOX</strong></div></section>'+
     '<div class="mi-stats"><div><span>Awaiting review</span><strong>'+drafts.filter(x=>x.status==='pending').length+'</strong></div>'+
     '<div><span>Imported</span><strong>'+drafts.filter(x=>x.status==='imported').length+'</strong></div>'+
-    '<div><span>Mail forwarding</span><strong>'+(settings.email_enabled?'Ready':'Setup needed')+'</strong></div></div>'+
+    '<div><span>Mail forwarding</span><strong>'+(settings.email_enabled?'Configured':'Setup needed')+'</strong></div></div>'+
     '<div class="mi-two-cols"><section class="mi-panel mi-forward"><div class="mi-panel-head">'+
     '<div><h3>Your private forwarding address</h3><p>Unique to your account, never shared with other users</p></div><span>✦</span></div>'+
     (settings.email_enabled?
@@ -139,6 +139,7 @@ async function magicReviewDraft(id){
     '<label>Venue<input name="venue" maxlength="200" value="'+miEsc(candidate.venue)+'" placeholder="Arena / Stadium"></label>'+
     '<label>City<input name="city" maxlength="120" value="'+miEsc(candidate.city)+'"></label>'+
     '<label>Country<input name="country" maxlength="100" placeholder="Country where event takes place"></label>'+
+    '<label>Event category<select name="category">'+miSelectOpts([['Concert','Concert'],['Sports','Sports'],['Festival','Festival'],['Theatre','Theatre'],['Other','Other']],'Concert')+'</select></label>'+
     '<label>Ticket provider<input name="provider" maxlength="100" value="'+miEsc(candidate.provider)+'" placeholder="Ticketmaster / Eventim / AXS"></label>'+
     '<label>Ticket type<select name="ticket_type">'+miSelectOpts([
       ['E-Ticket','E-Ticket'],['Mobile Transfer','Mobile Transfer'],['PDF','PDF'],
@@ -204,7 +205,7 @@ async function miImport(event){
     starts_at:isoLocal(fields.local_start),
     existing_event_id:fields.existing_event_id?Number(fields.existing_event_id):null,
     venue:fields.venue||'',city:fields.city||'',country:fields.country||'',
-    provider:fields.provider||'',ticket_type:fields.ticket_type||'E-Ticket',
+    category:fields.category||'Concert',provider:fields.provider||'',ticket_type:fields.ticket_type||'E-Ticket',
     section:fields.section||'',row_label:fields.row_label||'',seats:fields.seats||'',
     quantity:Number(fields.quantity),purchase_price:fields.purchase_price,
     currency:fields.currency||'EUR',include_pdfs:Boolean(fields.include_pdfs)
