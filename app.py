@@ -1090,3 +1090,14 @@ def export_csv(table_name:Literal['events','tickets','listings','sales','expense
         writer.writerow({k:("'"+str(v) if str(v).startswith(('=','+','-','@')) else v) for k,v in row.items()})
     return Response(output.getvalue(),media_type='text/csv; charset=utf-8',headers={
         'Content-Disposition':'attachment; filename="'+table_name+'.csv"'})
+
+
+# Ceyrl V6: optional, read-only per-user intelligence. Existing API contracts stay intact.
+from ceyrl_v6 import install_v6_routes
+
+install_v6_routes(
+    app,
+    user_db=user_db,
+    connection=connection,
+    select=select,
+)
