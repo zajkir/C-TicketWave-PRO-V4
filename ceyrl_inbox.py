@@ -26,6 +26,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from fastapi import HTTPException, Request, UploadFile, File, Query
+from starlette.datastructures import UploadFile as ParsedUploadFile
 from pydantic import BaseModel, Field
 from ceyrl_shield import guard_ticket_create
 
@@ -102,7 +103,7 @@ def _lookup_alias(recipient, auth_db, connection):
     name, domain=address.rsplit("@",1)
     if domain!=_domain() or not re.fullmatch(r"inbox-[a-f0-9]{32}",name):
         return None
-    with connection(auth_db) as db:
+    with connection(auth_db,True) as db:
         _identity_tables(db)
         row=db.execute("""SELECT u.id FROM magic_inbox_aliases a JOIN users u ON u.id=a.user_id
             WHERE a.alias=? AND u.enabled=1 AND u.verified=1""",(name,)).fetchone()
@@ -161,7 +162,7 @@ def _eml_parts(raw):
                 html_parts.append(part.get_content())
         body="\n".join(plain) if plain else html_to_text("\n".join(html_parts))
         return {"sender":sender,"subject":subject,"message_id":message_id,
-                "body":body[:MAX_BODY_CHARS],"source_date":date}, files
+                "body":body[:MAX_BODY_CHARS]}, files
     except HTTPException:
         raise
     except (ValueError,TypeError,UnicodeError,LookupError) as exc:
@@ -491,7 +492,7 @@ def install_magic_inbox(app,*,user_db,connection,select,personal_key,storage_dir
             pdfs=[]
             for i in range(1,MAX_PDFS+1):
                 attachment=form.get("attachment-"+str(i))
-                if isinstance(attachment,UploadFile):
+                if isinstance(attachment,ParsedUploadFile):
                     blob=await attachment.read(MAX_PDF+1)
                     if len(blob)<=MAX_PDF and blob.startswith(b"%PDF-"):
                         pdfs.append((attachment.filename or "ticket.pdf",blob))
@@ -566,9 +567,19 @@ def install_magic_inbox(app,*,user_db,connection,select,personal_key,storage_dir
         user,path=user_db(request,True)
         with connection(path,True) as db:
             _user_tables(db)
-            row=db.execute("SELECT status FROM magic_inbox_drafts WHERE id=?",(draft_id,)).fetchone()
+            row=select(db,"SELECT status,encrypted_payload FROM magic_inbox_drafts WHERE id=?",
+                       (draft_id,),True)
             if not row:raise HTTPException(404,"Inbox confirmation not found.")
             if row["status"]!="pending":raise HTTPException(409,"Only pending drafts can be dismissed.")
+            try:
+                detail=json.loads(personal_key(user["id"]).decrypt(row["encrypted_payload"]))
+            except Exception:
+                raise HTTPException(500,"Cannot decrypt the inbox draft.")
             db.execute("UPDATE magic_inbox_drafts SET status='dismissed',updated_at=? WHERE id=?",
                        (stamp(),draft_id))
+        # Clean up staged PDFs on dismiss; never delete imported ticket PDFs.
+        for pdf in detail.get("pdfs",[]):
+            name=pdf.get("path","")
+            if re.fullmatch(r"inbox/[a-f0-9]{40}\.encrypted",name):
+                (storage_dir(user["id"])/"vault"/name).unlink(missing_ok=True)
         return {"ok":True}
