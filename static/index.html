@@ -4,10 +4,19 @@
 <meta name="theme-color" content="#090e1d"><meta name="description" content="Ceyrl – your own private ticket inventory and sales manager">
 <link rel="icon" href="/static/logo.png" type="image/png">
 <link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/ambient.css?v=1">
 <script defer src="/static/app.js"></script>
 <title>Ceyrl — Private Ticket Workspace</title>
 </head><body>
 <div class="grain" aria-hidden="true"></div>
+<!-- Accessible, decorative motion only: never receives pointer or keyboard events. -->
+<div class="ceyrl-auth-ambience" aria-hidden="true">
+  <span class="auth-ambient-ticket at-one"></span>
+  <span class="auth-ambient-ticket at-two"></span>
+  <span class="auth-ambient-ticket at-three"></span>
+  <span class="auth-ambient-euro ae-one">€</span>
+  <span class="auth-ambient-euro ae-two">€</span>
+</div>
 <div id="auth-view" class="auth-layout hidden">
   <section class="auth-aside">
     <div class="ambient-orb orb-one"></div><div class="ambient-orb orb-two"></div>
@@ -55,9 +64,25 @@
     <div class="sidebar-end"><div class="sidebar-security"><span>♧</span><div><strong>Your data. Your control.</strong><small>Only you can see your tickets.</small></div></div><button id="sidebar-account" class="sidebar-user" type="button"><span id="sidebar-avatar">C</span><span><strong id="sidebar-username">Account</strong><small id="sidebar-email">Private account</small></span><span>⋯</span></button></div>
   </aside>
   <div class="workspace-main">
+    <div class="ceyrl-motion" aria-hidden="true">
+      <span class="motion-aurora aurora-one"></span>
+      <span class="motion-aurora aurora-two"></span>
+      <span class="motion-grid"></span>
+      <span class="motion-ticket ticket-one"><i></i><b>CEYRL</b></span>
+      <span class="motion-ticket ticket-two"><i></i><b>ADMIT ONE</b></span>
+      <span class="motion-ticket ticket-three"><i></i><b>CEYRL</b></span>
+      <span class="motion-ticket ticket-four"><i></i><b>ADMIT ONE</b></span>
+      <span class="motion-currency currency-one">€</span>
+      <span class="motion-currency currency-two">€</span>
+      <span class="motion-currency currency-three">€</span>
+      <span class="motion-spark spark-one"></span>
+      <span class="motion-spark spark-two"></span>
+      <span class="motion-spark spark-three"></span>
+      <span class="motion-spark spark-four"></span>
+    </div>
     <header class="topbar">
       <div class="topbar-left"><button class="menu-toggle" id="menu-toggle" type="button" aria-label="Open navigation">☰</button><div class="breadcrumb"><span>Workspace</span><span> / </span><strong id="crumb-current">Overview</strong></div></div>
-      <div class="topbar-right"><label class="global-search"><span>⌕</span><input type="search" id="global-search" placeholder="Search inventory…"><kbd>⌘ K</kbd></label><div class="private-pill"><i></i> My private data</div><button type="button" id="top-avatar" class="top-avatar" title="My Account">C</button></div>
+      <div class="topbar-right"><label class="global-search"><span>⌕</span><input type="search" id="global-search" placeholder="Search inventory…"><kbd>⌘ K</kbd></label><button id="motion-toggle" type="button" class="motion-toggle" aria-pressed="true" title="Pause animated background">✧ <span>Motion on</span></button><div class="private-pill"><i></i> My private data</div><button type="button" id="top-avatar" class="top-avatar" title="My Account">C</button></div>
     </header>
     <div id="page-content" class="page-content"></div>
     <footer class="site-footer"><span>© 2026 Ceyrl</span><span>Encrypted files · Independent user data · Private workspace</span></footer>
