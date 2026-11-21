@@ -37,6 +37,7 @@ MAX_PDF_TOTAL = 9 * 1024 * 1024
 MAX_PDFS = 3
 MAX_BODY_CHARS = 36_000
 MAX_DRAFTS = 250
+MAX_STAGED_VAULT_BYTES = 128 * 1024 * 1024
 
 def now_stamp():
     return datetime.now(timezone.utc).isoformat()
@@ -319,6 +320,14 @@ def _record_draft(user_id,path,*, sender,subject,body,message_id,pdfs,
         try:
             if len(pdfs)>MAX_PDFS or sum(len(x[1]) for x in pdfs)>MAX_PDF_TOTAL:
                 raise HTTPException(413,"Too many PDF attachments (max 3 PDFs / 9 MB).")
+            if pdfs:
+                staged_folder=storage_dir(user_id)/"vault"/"inbox"
+                staged_folder.mkdir(parents=True,exist_ok=True)
+                already_used=sum(f.stat().st_size for f in staged_folder.glob("*.encrypted") if f.is_file())
+                # Fernet expands binary data; reserve extra space for encryption overhead.
+                projected=int(sum(len(x[1]) for x in pdfs)*1.5)+1024
+                if already_used + projected > MAX_STAGED_VAULT_BYTES:
+                    raise HTTPException(413,"Your inbox PDF storage has reached the 128 MB safety limit.")
             for fname,blob in pdfs:
                 if len(blob)>MAX_PDF or not blob.startswith(b"%PDF-"):
                     continue
@@ -395,6 +404,7 @@ class ImportDraft(BaseModel):
     venue: str = Field(default="",max_length=200)
     city: str = Field(default="",max_length=120)
     country: str = Field(default="",max_length=100)
+    category: str = Field(default="Concert",max_length=80)
     provider: str = Field(default="",max_length=100)
     ticket_type: str = Field(default="E-Ticket",max_length=100)
     section: str = Field(default="",max_length=100)
@@ -530,7 +540,7 @@ def install_magic_inbox(app,*,user_db,connection,select,personal_key,storage_dir
             if payload.existing_event_id is None:
                 cur=db.execute("""INSERT INTO events(title,starts_at,venue,city,country,category,notes,created_at)
                     VALUES(?,?,?,?,?,?,?,?)""",(title,moment,payload.venue.strip(),payload.city.strip(),
-                    payload.country.strip(),"Concert",
+                    payload.country.strip(),payload.category.strip() or "Other",
                     "Reviewed Magic Inbox purchase confirmation #"+str(draft_id),stamp()))
                 event_id=cur.lastrowid
                 log(db,"inbox-create","event",event_id)
