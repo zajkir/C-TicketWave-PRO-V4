@@ -230,3 +230,74 @@ def test_magic_inbox_does_not_guess_event_dates_or_import_without_confirmation(a
     assert _confirm(alice,token,draft,starts_at="tomorrow").status_code==422
     assert alice.get("/api/events").json()==[]
     assert alice.get("/api/tickets").json()==[]
+
+
+def test_delete_inbox_record_keeps_imported_ticket_and_pdf(app_clients):
+    _,alice,bob,data=app_clients
+    a=signup(alice,"magic-delete@example.com","Magic Delete")
+    b=signup(bob,"magic-delete-b@example.com","Magic Other")
+    msg=EmailMessage()
+    msg["From"]="seller@example.com"
+    msg["Subject"]="Event: sports ticket"
+    msg.set_content("Event: Sports Weekend\nDate: 2027-10-10\nSection: 12\nRow: 3\nSeats: 9")
+    payload=b"%PDF-1.4\nsport ticket\n%%EOF"
+    msg.add_attachment(payload,maintype="application",subtype="pdf",filename="sports.pdf")
+    created=alice.post("/api/inbox/upload",headers={"x-csrf-token":a},
+                       files={"file":("sports.eml",msg.as_bytes(),"message/rfc822")})
+    assert created.status_code==200,created.text
+    draft=created.json()["id"]
+    assert bob.delete(f"/api/inbox/drafts/{draft}",headers={"x-csrf-token":b}).status_code==404
+    imported=_confirm(alice,a,draft,category="Sports",event_title="Sports Weekend")
+    assert imported.status_code==200,imported.text
+    assert alice.get("/api/events").json()[0]["category"]=="Sports"
+    pdf_id=alice.get("/api/tickets/1/pdfs").json()[0]["id"]
+    deleted=alice.delete(f"/api/inbox/drafts/{draft}",headers={"x-csrf-token":a})
+    assert deleted.status_code==200,deleted.text
+    assert not alice.get("/api/inbox/drafts").json()
+    assert len(alice.get("/api/tickets").json())==1
+    assert alice.get(f"/api/tickets/1/pdfs/{pdf_id}").content==payload
+    assert bob.get("/api/events").json()==[]
+
+
+def test_mailgun_multipart_pdf_forward_parses_attachment(app_clients,monkeypatch):
+    _,alice,_,_=app_clients
+    signup_token=signup(alice,"magic-mailgun-pdf@example.com","Webhook PDFs")
+    monkeypatch.setenv("CTW_MAGIC_INBOX_DOMAIN","mg.example.test")
+    monkeypatch.setenv("CTW_MAILGUN_WEBHOOK_SIGNING_KEY","test-signature-secret")
+    address=alice.get("/api/inbox/settings").json()["email"]
+    moment=str(int(time.time()))
+    token=secrets.token_hex(25)
+    signature=hmac.new(b"test-signature-secret",(moment+token).encode(),hashlib.sha256).hexdigest()
+    fields={"timestamp":moment,"token":token,"signature":signature,
+            "recipient":address,"sender":"tickets@provider.example",
+            "subject":"Order confirmed","body-plain":_sample_body(),
+            "Message-Id":"<pdf-webhook@example>"}
+    pdf=b"%PDF-1.4\nwebhook file\n%%EOF"
+    result=alice.post("/api/inbox/mailgun",data=fields,
+        files={"attachment-1":("inbound.pdf",io.BytesIO(pdf),"application/pdf")})
+    assert result.status_code==200,result.text
+    assert result.json()["ok"] is True
+    draft=alice.get("/api/inbox/drafts").json()[0]
+    assert draft["pdfs"]==[{"filename":"inbound.pdf","size":len(pdf)}]
+    assert not alice.get("/api/tickets").json()
+    approved=_confirm(alice,signup_token,draft["id"])
+    assert approved.status_code==200,approved.text
+    assert approved.json()["attached_pdfs"]==1
+    assert alice.get("/api/tickets").json()[0]["pdf_count"]==1
+
+
+def test_dismissed_messages_are_deletable_and_upload_type_restricted(app_clients):
+    _,alice,_,_=app_clients
+    csrf=signup(alice,"magic-cleanup@example.com","Inbox Cleanup")
+    invalid=alice.post("/api/inbox/upload",headers={"x-csrf-token":csrf},
+          files={"file":("invalid.txt",b"not an email","text/plain")})
+    assert invalid.status_code==415
+    created=alice.post("/api/inbox/paste",headers={"x-csrf-token":csrf},
+        json={"subject":"Basic confirmation","body":"No verified event details here."})
+    assert created.status_code==200,created.text
+    did=created.json()["id"]
+    assert alice.post(f"/api/inbox/drafts/{did}/dismiss",
+        headers={"x-csrf-token":csrf}).status_code==200
+    assert alice.delete(f"/api/inbox/drafts/{did}",
+        headers={"x-csrf-token":csrf}).status_code==200
+    assert alice.get("/api/inbox/drafts").json()==[]
