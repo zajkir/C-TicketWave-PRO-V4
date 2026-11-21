@@ -23,24 +23,65 @@ async function renderXPage(page) {
   if(page==='delivery')return renderXDelivery();
 }
 
-function renderXCopilot() {
+async function renderXCopilot() {
   const content=$('#page-content');
   content.innerHTML=heading('Ceyrl AI Copilot',
-    'Ask questions about your private ticket inventory, sales and delivery readiness.')+
-    '<section class="x-hero x-ai-hero"><div><span class="x-eyebrow">CEYRL / INTELLIGENCE</span>'+
-    '<h2>Ask your workspace.<br><em>Get clear answers.</em></h2>'+
-    '<p>Start with the private local assistant. Online AI is optional and only receives your question and anonymized aggregate numbers when you explicitly enable it.</p></div>'+
+    'Real GPT-5.4 mini conversations, with optional live web search and scoped inventory context.')+
+    '<div class="x-loading">Checking your private AI connection…</div>';
+  let status={configured:false,model:'gpt-5.4-mini',web_available:false};
+  let history=[];
+  try {
+    [status,history]=await Promise.all([
+      api('/x/copilot/status'),
+      api('/x/copilot/history').then(r=>r.messages||[])
+    ]);
+  } catch(error) {
+    console.warn('Ceyrl AI connection check failed',error);
+  }
+  if(app.page!=='copilot')return;
+  xChatHistory=history.map(m=>({role:m.role,text:m.text,mode:m.mode||'ai'}));
+  const enabled=Boolean(status.configured);
+  content.innerHTML=heading('Ceyrl AI Copilot',
+    'An intelligent assistant powered by GPT-5.4 mini. Ask questions in Slovak or English.')+
+    '<section class="x-hero x-ai-hero"><div><span class="x-eyebrow">CEYRL / GPT-5.4 MINI</span>'+
+    '<h2>Ask anything.<br><em>Get real answers.</em></h2>'+
+    '<p>Talk naturally, ask follow-up questions and search the web for current information. '+
+    'Your chat history is encrypted inside your private workspace.</p></div>'+
     '<span class="x-hero-decoration" aria-hidden="true">✦</span></section>'+
+    '<div class="x-ai-status '+(enabled?'is-configured':'needs-key')+'">'+
+      '<span class="x-ai-status-icon">'+(enabled?'✓':'!')+'</span><div><strong>'+
+      (enabled?'GPT-5.4 mini API key configured':'GPT-5.4 mini is not configured yet')+'</strong><small>'+
+      (enabled?'Online AI is ready to test. Live web search is '+
+          (status.web_available?'available.':'disabled by the administrator.')+
+          ' Actual connectivity is confirmed when the first answer succeeds.':
+          'In Bot-Hosting.net → Environment, add CTW_OPENAI_API_KEY and restart your server. Offline rules cannot answer general knowledge or current-event questions.')+
+      '</small></div></div>'+
     '<div class="x-chat-wrap">'+
+    '<div class="x-chat-toolbar"><div><strong>Private conversation</strong>'+
+    '<small>Model: '+xEsc(status.model||'gpt-5.4-mini')+
+    ' · estimated usage this month: $'+Number(status.estimated_account_usage_usd||0).toFixed(4)+
+    '</small></div><button type="button" class="btn outline" data-x-action="clear-chat">Clear conversation</button></div>'+
     '<div class="x-chat-messages" id="x-chat-messages" aria-live="polite"></div>'+
     '<div class="x-chat-examples">'+
-    ['How much revenue did I record?','Which ticket lots have no PDFs?','Are there double-sale risks?','How many events do I have?']
+    ['When is the next FIFA World Cup?','Ktoré moje lístky ešte nemajú PDF?','How much revenue did I record?','Are there any double-sale risks?']
       .map(q=>'<button class="x-example" type="button" data-x-example="'+xEsc(q)+'">'+xEsc(q)+'</button>').join('')+
     '</div><form id="x-chat-form" class="x-chat-form">'+
-    '<textarea id="x-chat-question" placeholder="Ask about your tickets, profits, risks or events…" rows="3" minlength="2" maxlength="500" required></textarea>'+
-    '<div class="x-chat-controls"><label class="x-toggle-option"><input type="checkbox" id="x-use-online-ai">'+
-    '<span>Use optional online AI</span></label><button type="submit" class="btn primary" id="x-chat-send">Ask Copilot ↗</button></div>'+
-    '<small class="x-disclosure">Online AI is off by default. When enabled, your question and anonymized aggregate counts may be sent to the configured AI provider. No PDF files, stored emails or API keys are sent. Read-only: Copilot cannot modify or sell tickets.</small>'+
+    '<textarea id="x-chat-question" placeholder="Ask anything about your tickets, events or the world…" rows="3" minlength="2" maxlength="500" required></textarea>'+
+    '<div class="x-chat-controls x-copilot-options">'+
+      '<label class="x-toggle-option"><input type="checkbox" id="x-use-online-ai" '+(enabled?'checked':'')+
+        (enabled?'':' disabled')+'><span>Use GPT-5.4 mini</span></label>'+
+      '<label class="x-toggle-option"><input type="checkbox" id="x-use-web-search" '+
+        (enabled&&status.web_available?'checked':'')+
+        (enabled&&status.web_available?'':' disabled')+'><span>Web search (may cost extra)</span></label>'+
+      '<label class="x-toggle-option"><input type="checkbox" id="x-share-inventory" '+
+        (enabled?'':'disabled')+'><span>Include ticket details</span></label>'+
+    '</div><div class="x-chat-submit"><span class="x-chat-caption">Online AI is billed through the server API account. '+
+      'The operator can set a usage limit.</span><button type="submit" class="btn primary" id="x-chat-send">'+
+      (enabled?'Ask GPT-5.4 mini ↗':'Ask offline helper ↗')+'</button></div>'+
+    '<small class="x-disclosure">When GPT is selected, your question, recent chat and aggregate account numbers are sent to OpenAI. '+
+    'Enable “Include ticket details” only when needed; it additionally shares a limited preview of event names, dates and ticket lot fields. '+
+    'The provider does not receive PDF bytes, saved email addresses, passwords or API keys. '+
+    'Web search is limited to one tool call per answer. Answers are read-only and may be inaccurate; verify ticket rules and event dates.</small>'+
     '</form></div>';
   renderXChatMessages();
 }
@@ -48,16 +89,21 @@ function renderXCopilot() {
 function renderXChatMessages(){
   const el=$('#x-chat-messages');if(!el)return;
   if(!xChatHistory.length){
-    el.innerHTML='<div class="x-chat-start"><div class="x-chat-orb">✦</div><h3>Hello, I’m Ceyrl.</h3>'+
-      '<p>Ask about your private inventory. I can explain sales, risks, missing PDFs and help you find the right screen.</p>'+
-      xTag('Private by default','green')+'</div>';return;
+    el.innerHTML='<div class="x-chat-start"><div class="x-chat-orb">✦</div><h3>Welcome to Ceyrl AI.</h3>'+
+      '<p>Ask a real question. With GPT-5.4 mini configured, you can discuss current events, ticket operations and follow-ups in context.</p>'+
+      xTag('Encrypted chat history','green')+'</div>';return;
   }
   el.innerHTML=xChatHistory.map(m=>
     '<div class="x-chat-bubble '+(m.role==='user'?'x-from-user':'x-from-assistant')+'"><span>'+
-    (m.role==='user'?'YOU':'CEYRL '+(m.mode==='ai'?'AI':'LOCAL'))+'</span><p>'+
+    (m.role==='user'?'YOU':'CEYRL '+(m.mode==='ai'?'· GPT-5.4 mini':'· OFFLINE HELPER'))+'</span><p>'+
     xEsc(m.text)+'</p>'+
+    (Array.isArray(m.citations)&&m.citations.length?
+      '<div class="x-chat-citations"><strong>Sources</strong>'+
+        m.citations.filter(c=>/^https?:\/\//.test(c.url||'')).map(c=>
+          '<a href="'+xEsc(c.url)+'" target="_blank" rel="noopener noreferrer">'+
+          xEsc(c.title||'Source')+' ↗</a>').join('')+'</div>':'')+
     (m.notice?'<small>'+xEsc(m.notice)+'</small>':'')+
-    (m.pages?'<div class="x-chat-actions">'+m.pages.map(p=>
+    (m.pages?.length?'<div class="x-chat-actions">'+m.pages.map(p=>
       '<button type="button" data-x-goto="'+xEsc(p)+'">'+xEsc(p.replaceAll('_',' '))+' ↗</button>').join('')+'</div>':'')+
     '</div>').join('');
   el.scrollTop=el.scrollHeight;
@@ -66,22 +112,37 @@ function renderXChatMessages(){
 async function xAskCopilot(){
   const field=$('#x-chat-question'),button=$('#x-chat-send');
   const question=field?.value.trim();
-  if(!question || question.length<2)return;
+  if(!question || question.length<2 || button.disabled)return;
   const useAI=$('#x-use-online-ai')?.checked||false;
+  const webSearch=useAI&&Boolean($('#x-use-web-search')?.checked);
+  const includeInventory=useAI&&Boolean($('#x-share-inventory')?.checked);
   button.disabled=true;
   xChatHistory.push({role:'user',text:question});
   field.value='';
   renderXChatMessages();
   try{
-    const response=await api('/x/copilot',{method:'POST',body:{question,use_ai:useAI}});
+    const response=await api('/x/copilot',{method:'POST',body:{
+      question,use_ai:useAI,web_search:webSearch,include_inventory:includeInventory
+    }});
     xChatHistory.push({role:'assistant',mode:response.mode,text:response.answer,
-      notice:response.notice,pages:response.pages});
-    if(xChatHistory.length>30)xChatHistory=xChatHistory.slice(-30);
+      notice:response.notice,pages:response.pages,citations:response.citations});
+    if(xChatHistory.length>60)xChatHistory=xChatHistory.slice(-60);
     renderXChatMessages();
+    if(response.usage?.estimated_cost_usd!=null){
+      const el=$('.x-chat-toolbar small');
+      if(el)el.textContent=(response.model||'gpt-5.4-mini')+
+        ' · last request estimate: $'+Number(response.usage.estimated_cost_usd).toFixed(4);
+    }
   }catch(e){
-    xChatHistory.push({role:'assistant',mode:'local',text:'I could not retrieve your private analytics. Try again or check your connection.'});
-    renderXChatMessages();notifyError(e);
-  }finally{button.disabled=false;field.focus()}
+    xChatHistory.push({role:'assistant',mode:'local',text:'The online AI request did not complete: '+
+      (e.message||'Unknown error')+
+      ' Check your API key, project billing or monthly request limit. No AI response was generated.'});
+    renderXChatMessages();
+    notifyError(e);
+  }finally{
+    button.disabled=false;
+    field.focus();
+  }
 }
 
 async function renderXShield(){
