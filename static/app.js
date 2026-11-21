@@ -1,4 +1,4 @@
-/* C TicketWave PRO V5 — no CDN, independent authenticated workspace. */
+/* Ceyrl — no CDN, independent authenticated workspace. */
 'use strict';
 const $=(selector)=>document.querySelector(selector);
 const escapeHtml=(value)=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -34,7 +34,7 @@ async function api(path,opts={}){
 function notify(message,error=false){const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=message;$('#toast-stack').appendChild(el);setTimeout(()=>el.remove(),4800)}
 function notifyError(error){notify(error?.message||String(error),true)}
 function toggle(selector,show){$(selector).classList.toggle('hidden',!show)}
-function heading(title,subtitle,actions=''){return `<div class="page-heading"><div><div class="eyebrow">C TICKETWAVE / PRIVATE WORKSPACE</div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div><div class="heading-actions">${actions}</div></div>`}
+function heading(title,subtitle,actions=''){return `<div class="page-heading"><div><div class="eyebrow">CEYRL / PRIVATE WORKSPACE</div><h1>${escapeHtml(title)}</h1><p>${escapeHtml(subtitle)}</p></div><div class="heading-actions">${actions}</div></div>`}
 function button(label,action,style='primary'){return `<button type="button" class="btn ${style}" data-action="${escapeHtml(action)}">${label}</button>`}
 function card(title,subtitle,body,action=''){return `<section class="panel"><div class="panel-head"><div><h2>${title}</h2><p>${subtitle}</p></div>${action}</div>${body}</section>`}
 function table(columns,rows,emptyMsg='No records yet'){return rows.length?`<div class="table-wrap"><table class="data-table"><thead><tr>${columns.map(s=>`<th>${s}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:empty('◈',emptyMsg,'Create your first record to get started.');}
@@ -57,7 +57,7 @@ function showAuth(mode){
  $('#forgot-link').classList.toggle('hidden',mode!=='login');
  toggle('#auth-google',app.google&&(mode==='login'||mode==='register'));
  $('#google-button').innerHTML=`<span class="google-symbol">G</span> ${mode==='register'?'Sign up with Google':'Continue with Google'} <span>↗</span>`;
- $('#auth-switch').innerHTML=mode==='login'?'New to TicketWave? <button type="button" id="switch-auth">Create an account</button>':
+ $('#auth-switch').innerHTML=mode==='login'?'New to Ceyrl? <button type="button" id="switch-auth">Create an account</button>':
   'Already have an account? <button type="button" id="switch-auth">Back to sign in</button>';
  $('#switch-auth').addEventListener('click',()=>showAuth(mode==='login'?'register':'login'));
  $('#auth-password').setAttribute('autocomplete',mode==='login'?'current-password':'new-password');
