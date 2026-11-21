@@ -130,14 +130,14 @@ def install_v6_routes(app, *, user_db, connection, select):
         if len(q) < 2:
             return {'results': []}
         # Quote LIKE wildcards so user input is a literal search term.
-        pattern = '%' + q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_') + '%'
+        pattern = '%' + q.replace('!', '!!').replace('%', '!%').replace('_', '!_') + '%'
         results = []
         with connection(path) as db:
             events = select(db, '''
                 SELECT id,title,city,starts_at
                 FROM events
-                WHERE title LIKE ? ESCAPE '\' OR venue LIKE ? ESCAPE '\'
-                      OR city LIKE ? ESCAPE '\'
+                WHERE title LIKE ? ESCAPE '!' OR venue LIKE ? ESCAPE '!'
+                      OR city LIKE ? ESCAPE '!'
                 ORDER BY starts_at DESC LIMIT 6
             ''', (pattern, pattern, pattern))
             for event in events:
@@ -149,8 +149,8 @@ def install_v6_routes(app, *, user_db, connection, select):
             tickets = select(db, '''
                 SELECT t.id,t.section,t.seats,t.provider,e.title AS event_title
                 FROM tickets t JOIN events e ON e.id=t.event_id
-                WHERE e.title LIKE ? ESCAPE '\' OR t.section LIKE ? ESCAPE '\'
-                      OR t.seats LIKE ? ESCAPE '\' OR t.provider LIKE ? ESCAPE '\'
+                WHERE e.title LIKE ? ESCAPE '!' OR t.section LIKE ? ESCAPE '!'
+                      OR t.seats LIKE ? ESCAPE '!' OR t.provider LIKE ? ESCAPE '!'
                 ORDER BY t.id DESC LIMIT 6
             ''', (pattern,pattern,pattern,pattern))
             for ticket in tickets:
@@ -164,7 +164,7 @@ def install_v6_routes(app, *, user_db, connection, select):
                 SELECT l.id,l.marketplace,l.status,e.title AS event_title
                 FROM listings l JOIN tickets t ON t.id=l.ticket_id
                 JOIN events e ON e.id=t.event_id
-                WHERE e.title LIKE ? ESCAPE '\' OR l.marketplace LIKE ? ESCAPE '\'
+                WHERE e.title LIKE ? ESCAPE '!' OR l.marketplace LIKE ? ESCAPE '!'
                 ORDER BY l.id DESC LIMIT 5
             ''', (pattern,pattern))
             for listing in listings:
