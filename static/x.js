@@ -337,6 +337,14 @@ function initXPages(){
         return renderXRadar();
       }
       const action=btn.dataset.xAction;
+      if(action==='clear-chat'){
+        if(!confirm('Delete your encrypted Ceyrl AI chat history? This cannot be undone.'))return;
+        await api('/x/copilot/history',{method:'DELETE'});
+        xChatHistory=[];
+        renderXChatMessages();
+        notify('Your AI conversation history was cleared.');
+        return;
+      }
       if(action==='radar-key'||action==='x-radar-key')return xRadarSetKey();
       if(action==='x-refresh-shield')return renderXShield();
       if(action==='radar-follow'){
