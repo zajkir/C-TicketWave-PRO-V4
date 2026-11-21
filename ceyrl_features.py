@@ -255,10 +255,19 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log):
         key=require_tm(user,path)
         with connection(path,True) as db:
             ensure_schema(db)
-            watches=select(db,"SELECT id,query,country FROM x_radar_watches ORDER BY id ASC LIMIT 15")
-        fresh=0;updated=0;errors=[]
+            watches=select(db,"SELECT id,query,country,last_checked FROM x_radar_watches ORDER BY id ASC LIMIT 15")
+        fresh=0;updated=0;errors=[];skipped=0
         for watch in watches:
             try:
+                last=watch["last_checked"]
+                if last:
+                    try:
+                        age=(datetime.now(timezone.utc)-datetime.fromisoformat(last.replace("Z","+00:00"))).total_seconds()
+                        if 0 <= age < 300:
+                            skipped+=1
+                            continue
+                    except (TypeError,ValueError):
+                        pass
                 params={"keyword":watch["query"],"size":15,"sort":"date,asc"}
                 if watch["country"]:params["countryCode"]=watch["country"]
                 result=call_tm(key,params)
@@ -287,7 +296,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log):
             except HTTPException as exc:
                 errors.append({"watch_id":watch["id"],"error":str(exc.detail)})
                 if exc.status_code==429:break
-        return {"new":fresh,"updated":updated,"checked":len(watches),"errors":errors,
+        return {"new":fresh,"updated":updated,"checked":len(watches)-skipped,"skipped":skipped,"errors":errors,
                 "notice":"In-app observations only. External event details are not automatically added to your inventory."}
 
     @app.post("/api/x/radar/import/{external_id}")
@@ -312,7 +321,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log):
 
     @app.post("/api/x/copilot")
     def copilot(payload:CopilotInput,request:Request):
-        _,path=user_db(request)
+        _,path=user_db(request,True)
         with connection(path,True) as db:
             ensure_schema(db)
             events=db.execute("SELECT COUNT(*) FROM events WHERE archived=0").fetchone()[0]
