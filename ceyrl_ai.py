@@ -317,8 +317,13 @@ def generate(question,user_id,inventory_path,*, auth_db,connection,personal_key,
             raise HTTPException(502,
                 "GPT-5.4 mini returned no visible answer. Please rephrase your question or try again.")
         usage=data.get("usage") or {}
-        cost=estimate_cost(int(usage.get("input_tokens",0) or 0),
-                           int(usage.get("output_tokens",0) or 0),web_calls)
+        # Preserve a conservative charge when a provider response lacks usage
+        # metadata, otherwise missing counters could bypass the budget guard.
+        if usage.get("input_tokens") is None or usage.get("output_tokens") is None:
+            cost=0.10 if web_search else 0.035
+        else:
+            cost=estimate_cost(int(usage.get("input_tokens",0) or 0),
+                               int(usage.get("output_tokens",0) or 0),web_calls)
         settle_call(auth_db,connection,reservation,cost,usage,web_calls)
         with connection(inventory_path,True) as db:
             append_chat(db,encryption,[
