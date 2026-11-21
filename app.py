@@ -35,6 +35,7 @@ from cryptography.fernet import Fernet
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Query
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from ceyrl_shield import guard_ticket_create
 from pydantic import BaseModel, Field
 
 BASE = Path(__file__).resolve().parent
@@ -806,6 +807,7 @@ def add_ticket(payload:TicketInput,request:Request):
     with connection(p,True) as db:
         if not db.execute('SELECT 1 FROM events WHERE id=? AND archived=0',(payload.event_id,)).fetchone():
             raise HTTPException(404,'Event does not exist in your account.')
+        guard_ticket_create(db,payload)
         cur=db.execute('''INSERT INTO tickets(event_id,provider,ticket_type,section,row_label,seats,quantity,
             purchase_cents,currency,notes,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
             (payload.event_id,payload.provider.strip(),payload.ticket_type.strip(),payload.section.strip(),
@@ -930,6 +932,9 @@ def edit_listing(listing_id:int,payload:ListingInput,request:Request):
         if existing['ticket_id']!=payload.ticket_id:
             raise HTTPException(400,'You cannot change the ticket for an existing listing.')
         if payload.status in ('listed','ready'):
+            remaining=db.execute('SELECT quantity-sold_quantity FROM tickets WHERE id=?',(payload.ticket_id,)).fetchone()
+            if not remaining or remaining[0]<=0:
+                raise HTTPException(409,'This ticket lot is sold out and cannot be marked active.')
             if db.execute('''SELECT 1 FROM listings WHERE ticket_id=? AND id!=?
                 AND status IN ('ready','listed')''',(payload.ticket_id,listing_id)).fetchone():
                 raise HTTPException(409,'Another listing for this ticket is active.')
@@ -975,6 +980,9 @@ def add_sale(payload:SaleInput,request:Request):
             listing=select(db,'SELECT ticket_id FROM listings WHERE id=?',(payload.listing_id,),True)
             if not listing or listing['ticket_id']!=payload.ticket_id:
                 raise HTTPException(422,'Listing does not belong to the selected ticket.')
+        if payload.reference.strip() and db.execute('''SELECT 1 FROM sales WHERE reference=? AND channel=?''',
+                (payload.reference.strip(),clean(payload.channel,100))).fetchone():
+            raise HTTPException(409,'A sale with this order reference and channel is already recorded.')
         price=cents(payload.revenue);fees=cents(payload.fees)
         if fees>price:
             raise HTTPException(422,'Fees cannot exceed sale revenue.')
@@ -983,8 +991,14 @@ def add_sale(payload:SaleInput,request:Request):
           (payload.ticket_id,payload.listing_id,payload.quantity,price,fees,currency(payload.currency),
            date_utc(payload.sold_at),clean(payload.channel,100),payload.reference.strip(),stamp()))
         db.execute('UPDATE tickets SET sold_quantity=sold_quantity+? WHERE id=?',(payload.quantity,payload.ticket_id))
+        # Conservatively pause all local active listings after any sale to prevent stale stock.
+        # This does not alter live listings on external marketplaces.
+        paused=db.execute("UPDATE listings SET status='paused' WHERE ticket_id=? AND status IN ('ready','listed')",
+                          (payload.ticket_id,)).rowcount
         log(db,'create','sale',cur.lastrowid)
-        return {'id':cur.lastrowid}
+        if paused: log(db,'shield-pause','ticket',payload.ticket_id)
+        return {'id':cur.lastrowid,'paused_local_listings':paused,
+                'notice':'Local active listings were paused. Review and update external marketplaces manually.'}
 
 
 class ExpenseInput(BaseModel):
@@ -1100,4 +1114,13 @@ install_v6_routes(
     user_db=user_db,
     connection=connection,
     select=select,
+)
+
+
+# Ceyrl X add-on routes. Every feature uses the authenticated per-user database.
+from ceyrl_features import install_ceyrl_x
+
+install_ceyrl_x(
+    app, user_db=user_db, connection=connection, select=select,
+    personal_key=personal_key, stamp=stamp, log=log
 )
