@@ -10,7 +10,7 @@ const isoLocal=(s)=>new Date(s).toISOString();
 const statusTag=(text)=>{const s=String(text||'draft').toLowerCase();const cls=s==='listed'||s==='sold'?'green':s==='ready'||s==='available'?'blue':s==='paused'?'gold':s==='cancelled'?'red':'grey';return `<span class="tag ${cls}">● ${escapeHtml(text)}</span>`};
 const app={user:null,csrf:'',authMode:'login',google:false,email:false,page:'overview',events:[],tickets:[],listings:[],sales:[],expenses:[],recaps:[],dashboard:null,search:''};
 const SECTIONS=[
- {name:'WORKSPACE',items:[['overview','▦','Overview'],['events','▤','My Events']]},
+ {name:'WORKSPACE',items:[['overview','▦','Overview'],['actions','✦','Action Center'],['events','▤','My Events']]},
  {name:'INVENTORY',items:[['tickets','▧','Ticket Inventory'],['listings','◇','Listings']]},
  {name:'FINANCES',items:[['sales','↗','Sales Tracker'],['expenses','€','Expenses & Costs'],['analytics','◫','Analytics']]},
  {name:'PERSONAL',items:[['activity','≡','Activity Log'],['settings','♙','My Account']]}
@@ -115,6 +115,7 @@ async function renderPage(){
  if(!app.user)return;$('#page-content').innerHTML='<div class="loading">Loading your private workspace…</div>';
  switch(app.page){
   case'overview':return renderOverview();
+  case'actions':return renderV6Actions();
   case'events':return renderEvents();
   case'tickets':return renderTickets();
   case'listings':return renderListings();
@@ -141,6 +142,7 @@ async function renderOverview(){
  `<div class="kpi-grid">${kpi('Net profit',money(d.profit_cents),'↗','Realized profit in EUR',d.profit_cents>=0?'positive':'negative')}${kpi('Sales revenue',money(d.revenue_cents),'€','Recorded EUR sales')}${kpi('Available tickets',num(d.available),'◈','Remaining individual seats')}${kpi('Tickets sold',num(d.sold),'▣','Across all your events')}</div>`+
  `<div class="two-cols">${card('Revenue performance','EUR revenue recorded over the most recent sale dates',chart(d.revenue_trend),hrefButton('Sales details','go-sales'))}${card('Portfolio at a glance','Your personal event and ticket inventory',`<div class="panel-body">${[['My events',num(d.events)],['Ticket lots',num(d.tickets)],['Encrypted PDF files',num(d.attachments)],['Local listings',num(d.listings)],['Individual sales',num(d.sales)]].map(([l,v])=>`<div class="summary-row"><span>${l}</span><strong>${v}</strong></div>`).join('')}</div>`)}</div>`+
  `<div class="two-cols">${card('Your upcoming events','Next scheduled events in your private calendar',e.length?`<div class="table-wrap">${table(['Event','Date','Tickets'],e.map(v=>`<tr><td><span class="table-strong">${escapeHtml(v.title)}</span><span class="table-sub">${escapeHtml(v.venue||v.city||'Location not specified')}</span></td><td>${niceDate(v.starts_at)}</td><td>${num(v.available)} available</td></tr>`))}</div>`:empty('▤','No upcoming events','Create an event to organize your first batch of tickets.',button('Create event','new-event')) ,hrefButton('All events','go-events'))}${card('Recent sales','Your latest completed sale records',d.recent_sales.length?table(['Event','Tickets','Revenue'],d.recent_sales.map(s=>`<tr><td><span class="table-strong">${escapeHtml(s.event_title)}</span><span class="table-sub">${niceDate(s.sold_at)}</span></td><td>${s.quantity}</td><td><strong class="positive">${money(s.revenue_cents,s.currency)}</strong></td></tr>`)):empty('↗','No sales recorded','Record a sale to see your actual profits.',button('Record sale','new-sale')),hrefButton('Sales tracker','go-sales'))}</div>`;
+ await decorateV6Overview();
 }
 function formOptions(data,placeholder='Choose an option'){return [{value:'',label:placeholder},...data]}
 function eventOptions(){return formOptions(app.events.map(e=>({value:e.id,label:e.title+' · '+niceDate(e.starts_at)})),'Select an event')}
@@ -334,8 +336,8 @@ $('#forgot-link').addEventListener('click',()=>showAuth('forgot'));
 $('#google-button').addEventListener('click',()=>window.location.assign('/api/auth/google/start'));
 $('#modal-close').addEventListener('click',closeModal);$('#modal-cancel').addEventListener('click',closeModal);
 $('#modal-backdrop').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
-$('#global-search').addEventListener('keydown',e=>{if(e.key==='Enter'){app.search=e.target.value.trim();navigate('tickets')}});
-window.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#global-search').focus()}if(e.key==='Escape')closeModal()});
+$('#global-search').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();openCeyrlSearch()}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal-backdrop').classList.contains('hidden'))closeModal()});
 // Motion is purely visual: no effect on account data or any backend request.
 (function initializeCeyrlMotion(){
   const control=$('#motion-toggle');
