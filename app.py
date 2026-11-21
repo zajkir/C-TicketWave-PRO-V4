@@ -279,7 +279,7 @@ async def lifespan(_app):
     yield
 
 
-app = FastAPI(title='Ceyrl', version='5.0.0', docs_url=None, redoc_url=None, lifespan=lifespan)
+app = FastAPI(title='Ceyrl', version='6.0.0', docs_url=None, redoc_url=None, lifespan=lifespan)
 app.mount('/static', StaticFiles(directory=BASE / 'static'), name='static')
 
 
