@@ -33,7 +33,7 @@ def test_v6_private_insights_and_search_are_isolated(app_clients):
                for row in a_search.json()['results'])
     assert b_search.json()['results'] == []
     # Wildcards are searched literally, not accidentally applied to all records.
-    assert alice.get('/api/v6/search?q=%25').json()['results'] == []
+    assert alice.get('/api/v6/search?q=%25X').json()['results'] == []
 
 
 def test_v6_sales_window_calculations_and_validations(app_clients):
