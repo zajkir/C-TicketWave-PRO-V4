@@ -2,6 +2,24 @@
 
 A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
 
+## Ceyrl X – modules 1, 3, 5 and 6 (November 2026)
+
+This release adds four functional, authenticated modules on top of Ceyrl V6, without changing existing account IDs, event IDs or the V5 database structure. Each new feature creates its own additive tables in the **currently logged-in user's** private SQLite database, only as needed.
+
+**1. AI Copilot:** A private, read-only assistant that can answer questions about recorded EUR sales, missing PDFs, number of events and local inventory risks without sending account data to an external AI provider. Online AI is *off by default* and optional: set `CTW_OPENAI_API_KEY` securely in hosting Environment and, optionally, `CTW_OPENAI_MODEL` to a model supported by your API account. When the user explicitly ticks **Use optional online AI**, only the user's question and aggregate numerical statistics are sent to the OpenAI Responses API with `store=false`; no PDF files, stored email addresses, API keys or individual seat data are included. Provider usage can incur API charges. If the provider is unavailable, Copilot falls back to a local answer. It has no write actions and cannot operate marketplaces.
+
+**3. Double-Sale Shield:** Automatically refuses new ticket lots when exactly parsed seat numbers overlap an existing lot in the same event, section and row. Supports explicit seats like `2,3`, `4-7` and `A1-A3`. Uncertain freeform seats and general admission are intentionally not treated as a provable conflict. Existing duplicate seats and multiple locally active listings are reported by the Shield page. Recording a sale immediately **pauses all local ready/listed records** for that ticket lot, even when some seats remain, so the owner can review quantities. Repeat channel + order reference values are blocked. **External marketplace listings are not modified**; users must update them separately. This does not guarantee no double-sale across external platforms.
+
+**5. Event Radar:** Search upcoming events through the official Ticketmaster Discovery API. Each user may connect their own API key in the application. The key is encrypted in their own PDF vault encryption scheme; alternatively the administrator can set `CTW_TICKETMASTER_API_KEY` in hosting Environment as a shared fallback. Search by artist/keyword and selected country; save up to 15 private watches; refresh observations and see new or changed event details. Refresh per watch is throttled to at most once every 5 minutes; there is no background scheduler or push notification in this release. Users can explicitly import an official event into their own calendar. If Ticketmaster does not supply a reliable UTC start time, import is declined rather than guessing. Search terms and API calls must comply with Ticketmaster's API terms and limits. Open [Ticketmaster Developer Portal](https://developer.ticketmaster.com/products-and-docs/apis/discovery/v2/) to create an API key.
+
+**6. Delivery Readiness:** A per-ticket checklist of event date, seat details, format, transfer/possession confirmation, provider restrictions, and availability. Each user can update delivery details; the system computes a 0–100 completeness score. For PDF delivery, an actual attached PDF contributes to readiness. For mobile transfer, the owner confirms transfer availability. The score **does not validate authenticity** or guarantee venue acceptance or successful delivery. It is advisory only.
+
+**Privacy and deployment:** All endpoints require the logged-in user. Writes and charge-triggering AI calls require CSRF. New SQLite tables are account-scoped, created additively and safely; old account files remain in place. Back up `CTW_DATA_DIR` (especially `identity.sqlite3`, each user's `inventory.sqlite3`, `vault/` and `.encryption_key`) before updating. Restart Bot-Hosting.net after pulling `main`; reload with Ctrl+F5. Use **AI Copilot**, **Double-Sale Shield**, **Event Radar** and **Delivery Readiness** from the left sidebar.
+
+**Testing:** `python -m pytest -q` includes account-isolation regression tests for all four modules. GitHub Actions also checks frontend syntax. Live OpenAI and Ticketmaster API connectivity require valid user-administered API credentials and are not exercised by mocked provider tests.
+
+---
+
 ## Ceyrl V6 – Premium Operations Upgrade (November 2026)
 
 This is a **working feature upgrade**, not a mockup. The existing V5 login, Google OAuth flow, per-user SQLite inventories and PDF encryption remain intact. V6 adds these verified source changes:
