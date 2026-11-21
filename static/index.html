@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#090e1d"><meta name="description" content="C TicketWave – your own private ticket inventory and sales manager">
+<meta name="theme-color" content="#090e1d"><meta name="description" content="Ceyrl – your own private ticket inventory and sales manager">
 <link rel="icon" href="/static/logo.png" type="image/png">
 <link rel="stylesheet" href="/static/style.css">
 <script defer src="/static/app.js"></script>
-<title>C TicketWave — Private Ticket Workspace</title>
+<title>Ceyrl — Private Ticket Workspace</title>
 </head><body>
 <div class="grain" aria-hidden="true"></div>
 <div id="auth-view" class="auth-layout hidden">
   <section class="auth-aside">
     <div class="ambient-orb orb-one"></div><div class="ambient-orb orb-two"></div>
     <div class="auth-aside-inner">
-      <div class="auth-product"><img src="/static/logo.png" width="48" height="48" alt=""><div><strong>C TicketWave</strong><small>PERSONAL TICKET COMMAND CENTER</small></div></div>
+      <div class="auth-product"><img src="/static/logo.png" width="48" height="48" alt=""><div><strong>Ceyrl</strong><small>PERSONAL TICKET COMMAND CENTER</small></div></div>
       <div class="auth-intro">
         <div class="eyebrow"><span class="lit-dot"></span> YOUR PRIVATE WORKSPACE</div>
         <h1>Every ticket.<br><em>Every detail.</em><br>All yours.</h1>
@@ -28,7 +28,7 @@
   </section>
   <main class="auth-main">
     <div class="auth-card">
-      <div class="auth-badge"><span class="badge-logo">C</span> TICKETWAVE <b>PRO</b></div>
+      <div class="auth-badge"><span class="badge-logo">C</span> CEYRL <b>PRO</b></div>
       <div class="auth-heading"><div class="eyebrow">WELCOME TO YOUR WORKSPACE</div><h2 id="auth-title">Welcome back</h2><p id="auth-description">Sign in to manage your personal ticket portfolio.</p></div>
       <div id="auth-note" class="auth-note hidden" role="status"></div>
       <div id="auth-errors" class="auth-errors hidden" role="alert"></div>
@@ -39,17 +39,17 @@
         <button class="btn primary full" id="auth-submit" type="submit">Sign in <span>↗</span></button>
       </form>
       <div id="auth-google" class="auth-google hidden"><div class="auth-or"><span>OR</span></div><button type="button" id="google-button" class="google-btn"><span class="google-symbol">G</span> Continue with Google <span>↗</span></button></div>
-      <div id="auth-switch" class="auth-switch">New to TicketWave? <button id="switch-auth" type="button">Create an account</button></div>
+      <div id="auth-switch" class="auth-switch">New to Ceyrl? <button id="switch-auth" type="button">Create an account</button></div>
       <div class="auth-footnote"><span class="lock-badge">♢</span> Your account, event records and PDFs are private and never shared with other members.</div>
     </div>
-    <div class="auth-footer">© 2026 C TicketWave PRO <span>•</span> Private ticket operations</div>
+    <div class="auth-footer">© 2026 Ceyrl <span>•</span> Private ticket operations</div>
   </main>
 </div>
 
 <div id="workspace" class="workspace hidden">
   <div id="mobile-scrim" class="mobile-scrim hidden"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><img src="/static/logo.png" alt="C" width="42" height="42"><div><strong>C TicketWave</strong><small>PERSONAL WORKSPACE</small></div><span class="sidebar-beta">PRO</span></div>
+    <div class="sidebar-logo"><img src="/static/logo.png" alt="C" width="42" height="42"><div><strong>Ceyrl</strong><small>PERSONAL WORKSPACE</small></div></div>
     <div class="workspace-current"><div class="workspace-initial" id="workspace-initial">C</div><div><strong id="workspace-name">My Workspace</strong><small><span class="online-dot"></span> Private & secured</small></div><span class="workspace-chevron">⌄</span></div>
     <nav id="sidebar-nav" aria-label="Main navigation"></nav>
     <div class="sidebar-end"><div class="sidebar-security"><span>♧</span><div><strong>Your data. Your control.</strong><small>Only you can see your tickets.</small></div></div><button id="sidebar-account" class="sidebar-user" type="button"><span id="sidebar-avatar">C</span><span><strong id="sidebar-username">Account</strong><small id="sidebar-email">Private account</small></span><span>⋯</span></button></div>
@@ -60,10 +60,10 @@
       <div class="topbar-right"><label class="global-search"><span>⌕</span><input type="search" id="global-search" placeholder="Search inventory…"><kbd>⌘ K</kbd></label><div class="private-pill"><i></i> My private data</div><button type="button" id="top-avatar" class="top-avatar" title="My Account">C</button></div>
     </header>
     <div id="page-content" class="page-content"></div>
-    <footer class="site-footer"><span>© 2026 C TicketWave PRO</span><span>Encrypted files · Independent user data · Private workspace</span></footer>
+    <footer class="site-footer"><span>© 2026 Ceyrl</span><span>Encrypted files · Independent user data · Private workspace</span></footer>
   </div>
 </div>
 
-<div class="modal-backdrop hidden" id="modal-backdrop"><div class="modal-window" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><div><div class="eyebrow">C TICKETWAVE / WORKSPACE</div><h2 id="modal-title">Create a record</h2></div><button type="button" id="modal-close" aria-label="Close">×</button></div><form id="modal-form"><div id="modal-fields" class="modal-fields"></div><div class="modal-actions"><button type="button" class="btn subtle" id="modal-cancel">Cancel</button><button class="btn primary" type="submit" id="modal-save">Save changes</button></div></form></div></div>
+<div class="modal-backdrop hidden" id="modal-backdrop"><div class="modal-window" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-head"><div><div class="eyebrow">C CEYRL / WORKSPACE</div><h2 id="modal-title">Create a record</h2></div><button type="button" id="modal-close" aria-label="Close">×</button></div><form id="modal-form"><div id="modal-fields" class="modal-fields"></div><div class="modal-actions"><button type="button" class="btn subtle" id="modal-cancel">Cancel</button><button class="btn primary" type="submit" id="modal-save">Save changes</button></div></form></div></div>
 <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 </body></html>
