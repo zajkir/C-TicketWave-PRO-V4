@@ -36,7 +36,10 @@
   border-radius: 14px;
   color: #ecf0ff;
   background: linear-gradient(135deg, rgba(40,53,87,.88), rgba(24,34,60,.94));
-  font: 650 14px/1.4 inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
   cursor: pointer;
   transition: border-color .15s, transform .15s, background .15s;
 }
