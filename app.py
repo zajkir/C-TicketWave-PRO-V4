@@ -335,7 +335,7 @@ def issue_session(request, user_id):
 
 def set_session_cookie(response, token):
     response.set_cookie(COOKIE, token, httponly=True, secure=SECURE_COOKIE,
-                        samesite='strict', max_age=SESSION_TTL, path='/')
+                        samesite='lax', max_age=SESSION_TTL, path='/')
 
 
 def auth(request: Request, role='viewer', mutate=False):
@@ -412,10 +412,14 @@ def auth_state(request: Request):
     try:
         user = auth(request)
         return {'setup_required': False, 'authenticated': True, 'user': public_user(user),
-                'csrf': user['csrf'], 'ticketmaster_connected': bool(os.environ.get('TICKETMASTER_API_KEY'))}
+                'csrf': user['csrf'], 'ticketmaster_connected': bool(os.environ.get('TICKETMASTER_API_KEY')),
+                'google_enabled': google_oauth['enabled'](),
+                'google_linked': google_oauth['linked'](user['id'])}
     except HTTPException:
         return {'setup_required': setup, 'authenticated': False, 'user': None,
-                'ticketmaster_connected': bool(os.environ.get('TICKETMASTER_API_KEY'))}
+                'ticketmaster_connected': bool(os.environ.get('TICKETMASTER_API_KEY')),
+                'google_enabled': google_oauth['enabled'](),
+                'google_linked': False}
 
 
 @app.post('/api/auth/bootstrap')
@@ -1378,3 +1382,15 @@ def integrations(request:Request):
 @app.get('/health')
 def health():
     return {'status':'ok'}
+
+
+# Google OpenID Connect sign-in is opt-in, requiring hosting environment secrets.
+# Installed after all existing routes to preserve legacy authentication.
+from google_auth import install_google_auth
+
+google_oauth = install_google_auth(
+    app, db=db, fetch=fetch, auth=auth, issue_session=issue_session,
+    set_session_cookie=set_session_cookie, log=log, timestamp=timestamp,
+    utcnow=utcnow, hasher=HASHER, session_cookie=COOKIE,
+    secure_cookie=SECURE_COOKIE
+)
