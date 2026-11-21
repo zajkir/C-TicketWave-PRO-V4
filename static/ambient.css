@@ -1,0 +1,311 @@
+/* Ceyrl Atmospheric UI V1
+ * Decorative-only CSS animation: no JS timers, canvases, networks or GPU-heavy filters.
+ * Everything sits behind content and respects reduced-motion preferences.
+ */
+:root {
+  --bg: #080c1a;
+  --canvas: #0b1123;
+  --panel: #12192d;
+  --panel2: #171e34;
+  --panel3: #1b2440;
+  --line: #323456;
+  --line2: #424467;
+  --blue: #a29aff;
+  --violet: #ba82ed;
+  --teal: #55d9bb;
+  --shadow: 0 18px 46px rgba(2, 4, 18, .34);
+}
+body {
+  background: radial-gradient(ellipse at 83% 12%, #271746 0%, transparent 40%),
+              radial-gradient(ellipse at 10% 90%, #0c3440 0%, transparent 43%), #080c1a;
+}
+.workspace-main {
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(ellipse at 84% 8%, rgba(87,43,142,.13),transparent 44%),
+              radial-gradient(ellipse at 14% 80%, rgba(18,108,122,.075),transparent 46%),
+              #090e1d;
+}
+.ceyrl-motion {
+  position: fixed;
+  inset: 0 0 0 258px;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  overflow: hidden;
+  contain: strict;
+}
+.workspace-main > .page-content,
+.workspace-main > .site-footer { position: relative; z-index: 1; }
+.workspace-main > .topbar { z-index: 20; }
+
+.motion-aurora {
+  position: absolute;
+  display: block;
+  width: 56vw;
+  max-width: 950px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(64px);
+  opacity: .15;
+  animation: ceyrl-aurora 34s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.aurora-one {
+  left: 41%;
+  top: -35%;
+  background: radial-gradient(circle, #8f4be8 0%, #513ba7 28%, transparent 67%);
+}
+.aurora-two {
+  right: 38%;
+  bottom: -52%;
+  width: 68vw;
+  background: radial-gradient(circle, #30adbd 0%, #226484 25%, transparent 68%);
+  opacity: .12;
+  animation-duration: 42s;
+  animation-direction: alternate-reverse;
+}
+.motion-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(141,132,218,.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(141,132,218,.026) 1px, transparent 1px);
+  background-size: 90px 90px;
+  opacity: .55;
+  mask-image: linear-gradient(120deg, transparent 4%, black 65%, transparent 100%);
+  animation: ceyrl-grid 48s linear infinite;
+}
+.motion-ticket {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: clamp(92px, 11vw, 154px);
+  height: clamp(47px, 5vw, 74px);
+  padding: 13px;
+  background: linear-gradient(135deg, rgba(163,126,246,.075), rgba(64,210,193,.035));
+  border: 1px solid rgba(166,151,246,.2);
+  border-radius: 13px;
+  color: rgba(200,190,255,.29);
+  box-shadow: inset 0 1px rgba(222,212,255,.045), 0 10px 36px rgba(5,4,26,.18);
+  opacity: .55;
+  transform: rotate(-18deg);
+  animation: ceyrl-ticket-float 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.motion-ticket::before,
+.motion-ticket::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(168,148,236,.18);
+  border-radius: 50%;
+  background: #0a1020;
+}
+.motion-ticket::before { top: -8px; }
+.motion-ticket::after { bottom: -8px; }
+.motion-ticket i {
+  position: absolute;
+  left: 23px;
+  top: 9px;
+  bottom: 9px;
+  width: 0;
+  border-left: 1px dashed rgba(174,166,231,.23);
+}
+.motion-ticket b {
+  font-size: clamp(7px,.75vw,10px);
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+.ticket-one { top: 14%; left: 68%; animation-delay: -9s; transform: rotate(-15deg); }
+.ticket-two { top: 42%; left: 9%; animation-delay: -20s; animation-duration: 34s; transform: rotate(18deg); opacity:.3; }
+.ticket-three { top: 70%; left: 78%; animation-delay: -7s; animation-duration: 36s; transform: rotate(12deg); }
+.ticket-four { top: 85%; left: 34%; animation-delay: -15s; animation-duration: 31s; opacity: .27; }
+.motion-currency {
+  position: absolute;
+  display: block;
+  font: 800 clamp(20px,3vw,48px)/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  background: linear-gradient(155deg,rgba(109,218,190,.27),rgba(154,134,242,.20));
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: .67;
+  text-shadow: 0 0 35px rgba(45,214,179,.06);
+  animation: ceyrl-currency-rise 35s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.currency-one { top: 28%; left: 28%; animation-delay: -9s; }
+.currency-two { top: 76%; left: 59%; animation-delay: -25s; font-size:27px; }
+.currency-three { top: 11%; left: 89%; animation-delay: -4s; font-size:24px; }
+.motion-spark {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #a8a4f9;
+  box-shadow: 0 0 15px 2px rgba(157,139,255,.4);
+  border-radius: 50%;
+  opacity: .3;
+  animation: ceyrl-sparkle 8s ease-in-out infinite;
+}
+.spark-one { top: 22%;left: 38%; }
+.spark-two { top: 55%;left: 79%;animation-delay:-3s; }
+.spark-three { top: 79%;left: 24%;animation-delay:-5s; }
+.spark-four { top: 36%;left: 58%;animation-delay:-6s; }
+@keyframes ceyrl-aurora {
+  from { transform: translate3d(-7%, 2%,0) scale(.9); }
+  to { transform: translate3d(9%, -8%,0) scale(1.16); }
+}
+@keyframes ceyrl-grid {
+  to { background-position: 90px 45px; }
+}
+@keyframes ceyrl-ticket-float {
+  from { transform: translate3d(-18px, 22px,0) rotate(-17deg); }
+  to { transform: translate3d(45px, -43px,0) rotate(4deg); }
+}
+@keyframes ceyrl-currency-rise {
+  from { transform: translate3d(-12px, 27px,0) rotate(-12deg); }
+  to { transform: translate3d(28px, -55px,0) rotate(17deg); }
+}
+@keyframes ceyrl-sparkle {
+  0%,100% { opacity: .12; transform: scale(.7); }
+  50% { opacity: .52; transform: scale(1.8); }
+}
+/* Login has its own restrained ambient scene, behind its interactive elements. */
+.ceyrl-auth-ambience {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity .6s;
+  clip-path: inset(0 48% 0 0);
+}
+body.auth-active .ceyrl-auth-ambience { visibility: visible; opacity: 1; }
+.auth-aside-inner, .auth-card, .auth-footer { position: relative; z-index: 2; }
+.auth-ambient-ticket {
+  position: absolute;
+  width: 156px;
+  height: 79px;
+  border: 1px solid rgba(182,160,246,.22);
+  background: linear-gradient(120deg,rgba(165,130,241,.095),transparent);
+  border-radius: 14px;
+  box-shadow: 0 0 45px rgba(102,79,187,.035);
+  animation: ceyrl-ticket-float 26s ease-in-out infinite alternate;
+}
+.auth-ambient-ticket::after {
+  content: "";
+  display: block;
+  height: 55px;
+  width: 0;
+  margin: 11px 30px;
+  border-left: 1px dashed rgba(176,148,229,.24);
+}
+.at-one { top: 20%;left: 33%;transform:rotate(-14deg); }
+.at-two { top: 67%;left: 10%;animation-delay:-14s;animation-duration:35s;opacity:.58; }
+.at-three { top: 48%;left: 45%;animation-delay:-6s;animation-duration:32s;opacity:.45; }
+.auth-ambient-euro {
+  position: absolute;
+  font-size: 45px;
+  font-weight: 800;
+  color: rgba(99,223,186,.11);
+  animation: ceyrl-currency-rise 27s ease-in-out infinite alternate;
+}
+.ae-one { top: 35%;left: 12%; }
+.ae-two { top: 77%;left: 41%;animation-delay:-13s; }
+/* Higher contrast, more atmospheric surfaces, not simply bright blue. */
+.panel {
+  background: linear-gradient(155deg,rgba(24,30,52,.975),rgba(14,22,39,.985));
+  border-color: rgba(134,127,185,.24);
+  box-shadow: 0 15px 48px rgba(2,5,18,.2), inset 0 1px rgba(225,220,255,.027);
+}
+.kpi {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg,#1b2140,#131c31 78%);
+  border-color:rgba(155,142,219,.26);
+  box-shadow: 0 12px 34px #02051846,inset 0 1px rgba(226,222,255,.04);
+}
+.kpi::before {
+  content: "";
+  position:absolute;
+  top:-50px;
+  right:-54px;
+  width:125px;height:125px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(147,111,240,.15),transparent 70%);
+  pointer-events:none;
+}
+.kpi:nth-child(3n+2) .kpi-symbol { color:#7be2c8; background:rgba(67,174,160,.13); }
+.kpi:nth-child(3n+3) .kpi-symbol { color:#f4c78a; background:rgba(202,135,70,.13); }
+.hero-panel {
+  background: radial-gradient(circle at 90% 12%,rgba(132,81,191,.37),transparent 37%),
+              linear-gradient(125deg,#242344,#18263a 67%,#152e38);
+  border-color:rgba(168,145,238,.32);
+  box-shadow:0 18px 62px rgba(10,8,32,.28),inset 0 1px rgba(255,255,255,.05);
+}
+.event-card { background:linear-gradient(140deg,#22213b,#131e33);border-color:rgba(139,135,206,.3); }
+.nav-item.active {
+  background:linear-gradient(90deg,#373057,#222c47);
+  box-shadow:inset 3px 0 0 #bf9cff,0 6px 24px rgba(53,37,105,.12);
+}
+.sidebar { background:linear-gradient(160deg,#10132a,#0b1625 70%); }
+.topbar { background:rgba(10,15,30,.92); border-color:#39335070; }
+.btn.primary { background:linear-gradient(115deg,#7261dc,#a16de0 57%,#7a81e9); }
+.btn.primary:hover:not(:disabled) { background:linear-gradient(115deg,#8671f2,#aa78e8 57%,#8c92fc); }
+.motion-toggle {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:rgba(35,33,61,.8);
+  border:1px solid rgba(149,133,207,.29);
+  color:#cdc7f6;
+  border-radius:10px;
+  padding:9px 12px;
+  font-size:11px;
+  white-space:nowrap;
+  transition:background .2s,border-color .2s;
+}
+.motion-toggle:hover { background:rgba(69,47,105,.8);border-color:#a88cf7; }
+.motion-toggle[aria-pressed="false"] { color:#8290aa;background:#1b2133; }
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+  .panel,.event-card,.kpi { transition:border-color .2s ease,box-shadow .25s ease,transform .25s ease; }
+  .panel:hover,.event-card:hover,.kpi:hover {
+    border-color:rgba(169,151,227,.41);
+    box-shadow:0 17px 47px rgba(3,4,19,.34);
+  }
+  .event-card:hover,.kpi:hover { transform:translateY(-2px); }
+}
+body.motion-off .motion-aurora,
+body.motion-off .motion-grid,
+body.motion-off .motion-ticket,
+body.motion-off .motion-currency,
+body.motion-off .motion-spark,
+body.motion-off .auth-ambient-ticket,
+body.motion-off .auth-ambient-euro { animation:none!important; }
+body.motion-off .motion-ticket,
+body.motion-off .motion-currency,
+body.motion-off .motion-spark,
+body.motion-off .auth-ambient-ticket,
+body.motion-off .auth-ambient-euro { opacity:.08; }
+@media (prefers-reduced-motion:reduce) {
+  .ceyrl-motion *, .ceyrl-auth-ambience * { animation:none!important;transition:none!important; }
+  .motion-ticket,.motion-currency,.motion-spark,.auth-ambient-ticket,.auth-ambient-euro{opacity:.08!important}
+  .panel,.event-card,.kpi,.btn {transition:none!important; transform:none!important}
+}
+@media(max-width:850px) {
+  .ceyrl-motion { left:0;opacity:.7; }
+  .motion-ticket.ticket-two,.motion-ticket.ticket-four,.currency-three {display:none}
+  .ceyrl-auth-ambience {display:none}
+}
+@media(max-width:1250px) {
+  .topbar-right .motion-toggle span { display:none; }
+}
+@media(max-width:560px) {
+  .motion-toggle {padding:7px 10px;}
+  .motion-ticket.ticket-three,.currency-two,.aurora-two { display:none}
+}
