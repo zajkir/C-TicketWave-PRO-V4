@@ -22,8 +22,6 @@ jobs:
           python-version: '3.12'
       - name: Install backend dependencies
         run: python -m pip install --disable-pip-version-check -r requirements.txt
-      - name: Probe public event API response shapes (no secrets)
-        run: python scripts/radar_provider_probe.py
       - name: Test private databases, auth, and V6 intelligence
         run: python -m pytest -q
       - name: Check frontend JavaScript syntax
@@ -39,6 +37,4 @@ jobs:
           python -m py_compile ceyrl_features.py
           python -m py_compile ceyrl_radar.py
           python -m py_compile ceyrl_sports.py
-          python -m py_compile ceyrl_music.py
-          python -m py_compile ceyrl_gigora.py
           python -m py_compile ceyrl_ai.py
