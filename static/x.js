@@ -312,42 +312,59 @@ function xRadarResultsHtml(rows){
     '</div></article>').join('')+'</div></section>';
 }
 
+function xRadarExternalLinks(query){
+  const safeQuery=encodeURIComponent(query||'');
+  return '<section class="x-radar-external"><strong>Look for more dates from ticketing sites</strong>'+
+    '<p>These are links to external search pages, not verified results in Ceyrl. '+
+    'A missing result in Ceyrl does not mean the artist has no shows.</p>'+
+    '<a target="_blank" rel="noopener noreferrer" href="https://www.ticketmaster.com/search?q='+safeQuery+
+      '">Ticketmaster ↗</a>'+
+    '<a target="_blank" rel="noopener noreferrer" href="https://www.songkick.com/search?query='+safeQuery+
+      '">Songkick ↗</a>'+
+    (/nations?\s*league|liga\s*n[áa]rodov/i.test(query)?
+      '<a target="_blank" rel="noopener noreferrer" href="https://www.uefa.com/uefanationsleague/fixtures-results/">'+
+      'UEFA Nations League fixtures ↗</a>':'')+
+    '</section>';
+}
+
 async function xRadarSearch(){
   const query=$('#x-radar-query')?.value.trim()||'';
   const country=$('#x-radar-country')?.value||'';
   const kind=$('#x-radar-kind')?.value||'all';
   if(query.length<2)return;
   xRadarQuery=query;xRadarCountry=country;xRadarKind=kind;
-  $('#x-radar-results').innerHTML='<div class="x-loading">Searching public event listings…</div>';
+  const resultPanel=$('#x-radar-results');
+  if(!resultPanel)return;
+  resultPanel.innerHTML='<div class="x-loading">Searching concert and event sources…</div>';
   try{
     const data=await api('/x/radar/search?q='+encodeURIComponent(query)+'&country='+encodeURIComponent(country)+'&kind='+encodeURIComponent(kind));
     xRadarEvents=data.events||[];
-    xRadarSource=data.source||'Public events';
+    xRadarSource=data.source||'Public catalogs';
     xRadarCoverage=data.coverage_note||'';
     if(app.page==='radar'){
       const sources=(data.sources_checked||[]).join(' + ');
-      const warnings=data.provider_warnings||[];
-      const safeQuery=encodeURIComponent(query);
-      const external='<div class="x-radar-external"><strong>Continue in official sources</strong>'+
-        '<p>These links open live search pages; they are not confirmed Ceyrl event results.</p>'+
-        '<a target="_blank" rel="noopener noreferrer" href="https://www.ticketmaster.com/search?q='+safeQuery+
-        '">Search Ticketmaster ↗</a>'+
-        (/nations?\s*league|liga\s*n[áa]rodov/i.test(query)?
-          '<a target="_blank" rel="noopener noreferrer" href="https://www.uefa.com/uefanationsleague/fixtures-results/">'+
-          'UEFA Nations League official fixtures ↗</a>':'')+
-        '</div>';
-      $('#x-radar-results').innerHTML=
-        '<p class="x-description x-radar-search-source">Checked: '+xEsc(sources||xRadarSource)+
-        '. '+xEsc(xRadarCoverage)+'</p>'+
-        (warnings.length?'<div class="x-api-error">Some sources did not respond: '+
-          xEsc(warnings.join('; '))+'. Results may be incomplete.</div>':'')+
-        (xRadarEvents.length?xRadarResultsHtml(xRadarEvents):
-          '<div class="x-empty">No matching events were found in the available catalogs. '+
-          'This does not mean the event does not exist.</div>')+
-        external;
+      const unavailable=data.provider_warnings||[];
+      const status='<p class="x-description x-radar-search-source">Live catalogs checked: '+
+        xEsc(sources||xRadarSource)+'. '+xEsc(xRadarCoverage)+'</p>';
+      // A broken backup provider is not a failed user search. Don't display a
+      // prominent red error for every artist when Gigora answered successfully.
+      const degraded=unavailable.length&&xRadarEvents.length===0?
+        '<p class="x-radar-provider-note">Some extra catalogs were unavailable. '+
+        'The available results may not cover all concerts.</p>':'';
+      const results=xRadarEvents.length?
+        xRadarResultsHtml(xRadarEvents):
+        '<div class="x-empty">No confirmed matching tour dates in the catalogs that answered. '+
+        'Try the links below to check other ticketing sources.</div>';
+      const panel=$('#x-radar-results');
+      if(panel)panel.innerHTML=status+degraded+results+xRadarExternalLinks(query);
     }
   }catch(error){
-    $('#x-radar-results').innerHTML='<div class="x-api-error">'+xEsc(error.message)+'</div>';
+    const panel=$('#x-radar-results');
+    if(panel){
+      panel.innerHTML='<div class="x-api-error">Live event lookup is temporarily unavailable: '+
+        xEsc(error.message||'Please try again shortly.')+'</div>'+
+        xRadarExternalLinks(query);
+    }
   }
 }
 
