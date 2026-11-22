@@ -360,7 +360,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
     def radar_import(external_id:str,request:Request):
         user,path=user_db(request,True)
         ceyrl_radar.rate_limit(auth_db,connection,user["id"],"import")
-        if external_id.startswith("tf:"):
+        if external_id.startswith(("tf:","sp:")):
             with connection(path,True) as db:
                 tm=ceyrl_radar.lookup(db,external_id)
         else:
