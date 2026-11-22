@@ -19,8 +19,6 @@ from urllib.parse import urlsplit
 
 import httpx
 from fastapi import HTTPException
-import ceyrl_music
-import ceyrl_gigora
 
 PUBLIC_API = "https://www.ticketfairy.com/api/v1/events/listing"
 CACHE_TTL = 300
@@ -136,33 +134,22 @@ def search_public(query,country):
 
 
 def _valid_provider_url(url):
-    """Strict allowlist for provider links stored in our private import cache."""
+    """Strict trusted URL allowlist for verified public provider imports."""
     if _valid_event_url(url):
         return True
     if not isinstance(url,str) or len(url)>800:
         return False
-    parts=urlsplit(url)
-    if parts.scheme!="https" or parts.username or parts.password:
+    try:
+        parts=urlsplit(url)
+        if (parts.scheme!="https" or parts.username or parts.password or
+            parts.port not in (None,443) or parts.query or parts.fragment):
+            return False
+        if parts.hostname=="www.thesportsdb.com":
+            return bool(re.fullmatch(r"/event/\d{1,12}",parts.path))
+        if parts.hostname=="www.espn.com":
+            return bool(re.fullmatch(r"/soccer/match/_/gameId/\d{1,12}",parts.path))
+    except ValueError:
         return False
-    if parts.port not in (None,443) or parts.fragment:
-        return False
-    # Gigora's documented page URLs include a harmless utm_source=ai query.
-    # Validate its limited parameters before applying the strict no-query rule
-    # to the other third-party sources.
-    if parts.hostname in ("gigora.live","www.gigora.live"):
-        return bool(ceyrl_gigora._hosted_url(url))
-    if parts.query:
-        return False
-    if parts.hostname=="www.thesportsdb.com":
-        return bool(re.fullmatch(r"/event/\d{1,12}",parts.path))
-    if parts.hostname=="www.espn.com":
-        return bool(re.fullmatch(r"/soccer/match/_/gameId/\d{1,12}",parts.path))
-    if parts.hostname=="stungevents.com":
-        return bool(re.fullmatch(r"/event/[a-zA-Z0-9_-]{4,135}",parts.path))
-    if ceyrl_gigora._hosted_url(url):
-        return True
-    if ceyrl_music._safe_link(url):
-        return True
     return False
 
 
@@ -180,10 +167,7 @@ def remember(db,events):
     for item in events:
         ident=item.get("id","")
         if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",ident) or
-                re.fullmatch(r"sp:(?:ts|es):\d{1,12}",ident) or
-                re.fullmatch(r"se:[A-Za-z0-9_-]{4,135}",ident) or
-                re.fullmatch(r"td:[A-Za-z0-9_-]{6,70}",ident) or
-                re.fullmatch(r"gi:[a-f0-9]{26}",ident)):
+                re.fullmatch(r"sp:(?:ts|es):\d{1,12}",ident)):
             continue
         if not _valid_provider_url(item.get("url")):
             continue
@@ -197,10 +181,7 @@ def remember(db,events):
 
 def lookup(db,external_id):
     if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",external_id) or
-            re.fullmatch(r"sp:(?:ts|es):\d{1,12}",external_id) or
-            re.fullmatch(r"se:[A-Za-z0-9_-]{4,135}",external_id) or
-            re.fullmatch(r"td:[A-Za-z0-9_-]{6,70}",external_id) or
-            re.fullmatch(r"gi:[a-f0-9]{26}",external_id)):
+            re.fullmatch(r"sp:(?:ts|es):\d{1,12}",external_id)):
         raise HTTPException(422,"Invalid event identifier.")
     init_cache(db)
     row=db.execute("""SELECT payload,observed_at FROM x_radar_public_results
