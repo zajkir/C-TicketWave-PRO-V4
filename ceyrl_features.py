@@ -192,10 +192,17 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
             ensure_schema(db)
             personal=bool(db.execute("SELECT 1 FROM x_integrations WHERE name='ticketmaster'").fetchone())
             count=db.execute("SELECT COUNT(*) FROM x_radar_watches").fetchone()[0]
-        return {"connected":bool(personal or os.getenv("CTW_TICKETMASTER_API_KEY") or os.getenv("TICKETMASTER_API_KEY")),
-                "personal_key":personal,"watch_count":count,"provider":"Ticketmaster Discovery API v2",
-                "refresh_note":"Event watches refresh when requested. No background scheduler is active."}
+        shared=bool(os.getenv("CTW_TICKETMASTER_API_KEY","").strip() or
+                    os.getenv("TICKETMASTER_API_KEY","").strip())
+        return {"connected":True,"key_required":False,"personal_key":personal,
+                "server_ticketmaster":shared,"watch_count":count,
+                "provider":"Ticket Fairy public events (no key required)" +
+                           (" + Ticketmaster if configured" if shared or personal else ""),
+                "coverage_note":"Keyless search shows Ticket Fairy's published events, not every event or Ticketmaster listing.",
+                "refresh_note":"Watchlist refreshes on demand. No background scheduler is active."}
 
+    # Deprecated optional personal integration endpoints remain for existing users.
+    # The new interface never asks users to configure an API key.
     @app.put("/api/x/radar/key")
     def radar_key(payload:TMKeyInput,request:Request):
         user,path=user_db(request,True)
@@ -208,7 +215,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
             db.execute("""INSERT INTO x_integrations(name,encrypted_secret,updated_at)
               VALUES('ticketmaster',?,?) ON CONFLICT(name) DO UPDATE SET
               encrypted_secret=excluded.encrypted_secret,updated_at=excluded.updated_at""",(encrypted,stamp()))
-        return {"ok":True,"note":"Your key is encrypted in your personal vault."}
+        return {"ok":True,"note":"Your existing key remains encrypted and private."}
 
     @app.delete("/api/x/radar/key")
     def delete_radar_key(request:Request):
@@ -224,12 +231,16 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
         user,path=user_db(request)
         cc=country.upper().strip()
         if cc not in TM_COUNTRIES:raise HTTPException(422,"Unsupported country code.")
-        key=require_tm(user,path)
-        params={"keyword":q.strip(),"size":15,"sort":"date,asc"}
-        if cc:params["countryCode"]=cc
-        payload=call_tm(key,params)
-        return {"events":[normalize_tm(x) for x in ((payload.get("_embedded") or {}).get("events") or [])[:15]],
-                "source":"Ticketmaster Discovery API"}
+        q=q.strip()
+        if len(q)<2 or any(ord(ch)<32 or ord(ch)==127 for ch in q):
+            raise HTTPException(422,"Enter an artist or event name.")
+        ceyrl_radar.rate_limit(auth_db,connection,user["id"],"search")
+        events,source=discover_events(user,path,q,cc)
+        with connection(path,True) as db:
+            ensure_schema(db)
+            ceyrl_radar.remember(db,events)
+        return {"events":events,"source":source,
+                "coverage_note":"Results are limited to the public events indexed by the named source. Verify date and tickets at the official source."}
 
     @app.get("/api/x/radar/watches")
     def radar_watches(request:Request):
