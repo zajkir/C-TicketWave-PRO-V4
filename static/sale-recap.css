@@ -307,3 +307,377 @@ body.motion-off .sale-recap-sheet,body.motion-off .sale-recap-tab-panel{
   body.ceyrl-sale-open .sale-recap-event *,body.ceyrl-sale-open .sale-recap-tab-panel *,
   body.ceyrl-sale-open .sale-recap-profit *{color:#111!important;text-shadow:none!important}
 }
+
+
+/* ===========================================================
+   SALE RECAP V2 · THE EXPERIENCE, NOT A SIDEBAR
+   Reference-inspired ticket aesthetic: visual architecture,
+   rich event photography, centered stage, premium financial UI.
+   =========================================================== */
+.ceyrl-sale-overlay{
+  align-items:center!important;justify-content:center!important;
+  padding:clamp(12px,2.3vw,40px)!important;
+  background:radial-gradient(ellipse at 12% 26%,#52238540,transparent 48%),
+             radial-gradient(ellipse at 85% 70%,#00666623,transparent 54%),
+             #0b071b;
+}
+.ceyrl-sale-overlay .sale-recap-aurora{
+  z-index:0!important;opacity:1;
+  background:radial-gradient(ellipse at 4% 40%,#48187c72,transparent 52%),
+             radial-gradient(ellipse at 92% 18%,#155d7163,transparent 45%),
+             radial-gradient(ellipse at 42% 100%,#5a198b60,transparent 55%),#070713!important;
+}
+.ceyrl-sale-overlay .sale-orb-one{opacity:.82;width:75vw;height:70vw;max-width:none;max-height:none}
+.ceyrl-sale-overlay .sale-orb-two{opacity:.7;width:70vw;height:60vw;max-width:none;max-height:none}
+.ceyrl-sale-overlay .sale-wave{opacity:.4;bottom:-10%}
+.ceyrl-sale-overlay .sale-wave-two{opacity:.3;bottom:-24%}
+.ceyrl-sale-overlay .ceyrl-sale-shade{
+  z-index:1!important;
+  background:linear-gradient(115deg,rgba(8,4,23,.38),rgba(8,5,27,.46))!important;
+  backdrop-filter:blur(11px) saturate(1.15);
+}
+.ceyrl-sale-overlay .sale-recap-sheet{
+  z-index:3;
+  width:min(1100px,calc(100vw - 46px))!important;
+  max-width:none!important;
+  height:min(91dvh,1000px)!important;
+  max-height:1000px!important;
+  min-height:0;
+  border-radius:26px!important;
+  border:1px solid rgba(187,125,246,.66)!important;
+  background:linear-gradient(140deg,#211633f8,#12132cfb 50%,#1d1334fc)!important;
+  box-shadow:0 35px 100px #04010fe6,0 0 100px #913cf13e,
+             inset 0 1px #ffffff31!important;
+  animation:sale-full-reveal .44s cubic-bezier(.16,.78,.24,1) both;
+}
+.ceyrl-sale-mode-full .sale-recap-sheet{
+  width:min(1370px,calc(100vw - 50px))!important;
+  height:min(96dvh,1200px)!important;
+  max-height:1200px!important;
+  border-radius:28px!important;
+}
+.sale-recap-header{
+  position:relative;z-index:5;
+  background:linear-gradient(92deg,#27153ed9,#161328e6 52%,#152336ab)!important;
+  border-bottom-color:#78509e77;
+  padding:16px 31px!important;
+  min-height:71px;backdrop-filter:blur(12px);
+}
+.sale-recap-logo-line{display:flex;align-items:center;gap:11px;flex-wrap:wrap;min-width:0}
+.sale-recap-symbol{
+  display:grid;place-items:center;
+  width:35px;height:35px;
+  border-radius:11px;background:linear-gradient(140deg,#a452f7,#5d36b5 75%,#38a7d0);
+  color:#fff;font-size:19px;font-weight:830;
+  border:1px solid #d69eff8a;box-shadow:0 0 19px #8c35e76b
+}
+.sale-recap-brand{font-size:21px;letter-spacing:-.8px}
+.sale-recap-header-context{font-size:10px;letter-spacing:1.6px;color:#bca8d3}
+.sale-recap-private-tag{
+  display:inline-flex;align-items:center;white-space:nowrap;
+  background:rgba(56,200,178,.12);border:1px solid #3cccb656;
+  border-radius:100px;padding:8px 12px;color:#85e9d6;font-size:10px;letter-spacing:.2px;font-weight:650;
+}
+.sale-recap-header .sale-recap-close{
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(69,39,107,.74);border-color:#b46dea80;
+  display:grid;place-items:center;
+}
+.ceyrl-sale-overlay .sale-recap-scroll{
+  padding:0 clamp(18px,2.6vw,39px) 28px!important;
+  scroll-padding-top:24px;
+  background:
+    radial-gradient(ellipse at 93% 10%,rgba(100,50,149,.12),transparent 44%),
+    radial-gradient(ellipse at 5% 65%,rgba(24,119,129,.05),transparent 45%);
+}
+/* The first screen of the recap is a true two-column hero, not small cards. */
+.sale-recap-stage{
+  display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  overflow:hidden;position:relative;isolation:isolate;
+  min-height:330px;margin:28px 0 0;
+  border-radius:20px 20px 5px 5px;
+  border:1px solid #9167c3b5;
+  box-shadow:0 15px 42px #08032086,0 0 31px #a046e924;
+}
+.sale-recap-stage:after{
+  content:"";position:absolute;pointer-events:none;inset:auto 0 0;
+  height:2px;z-index:4;
+  background:linear-gradient(90deg,#b56bf6,#62eddf,#ad70ec);
+  box-shadow:0 0 17px #ae64fb6b
+}
+.ceyrl-sale-overlay .sale-recap-event{
+  min-height:342px;
+  display:flex!important;align-items:stretch;justify-content:stretch;
+  position:relative;isolation:isolate;overflow:hidden;
+  padding:0!important;
+  border-right:1px solid #b38cfa5b;
+  background:
+    linear-gradient(0deg,#170c2ff3 0%,rgba(26,8,54,.71) 43%,rgba(24,12,57,.37) 100%),
+    linear-gradient(110deg,#2d0f64a1,#032d50a8),
+    url('https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1400&q=82') center 60%/cover no-repeat,
+    url('/static/concert-aurora.svg') center/cover no-repeat!important;
+}
+.sale-recap-event:before{
+  content:"";position:absolute;pointer-events:none;inset:0;z-index:-1;
+  background:radial-gradient(circle at 80% 25%,#913ee848,transparent 54%);
+}
+.sale-recap-event-shimmer{
+  position:absolute;inset:-40% -80%;pointer-events:none;
+  background:linear-gradient(105deg,transparent 40%,#a78ef00c 48%,#e9caff20 50%,transparent 54%);
+  transform:translateX(-40%);
+  animation:sale-event-glint 16s ease-in-out infinite;
+}
+@keyframes sale-event-glint{0%,28%{transform:translateX(-45%) rotate(4deg)}55%,100%{transform:translateX(35%) rotate(4deg)}}
+.sale-recap-event-inner{
+  display:flex;flex-direction:column;justify-content:space-between;gap:24px;
+  position:relative;z-index:1;min-height:100%;width:100%;
+  padding:30px clamp(23px,3vw,39px) 25px;
+}
+.sale-recap-overline{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:10px;color:#edb0fe;
+  letter-spacing:2.05px;font-weight:790;
+}
+.sale-recap-overline>span:last-child{color:#dfd0edb8;white-space:nowrap}
+.sale-recap-event-heading{display:flex;align-items:center;gap:17px}
+.sale-recap-artist-avatar{
+  display:grid;place-items:center;flex-shrink:0;
+  width:74px;height:74px;border-radius:50%;
+  background:linear-gradient(145deg,#e17cfe,#8b3bdf 75%);
+  box-shadow:0 9px 36px #a03ee35f,inset 0 1px #ffffff82;
+  color:#fff;font-size:42px;font-weight:780;line-height:1;
+  border:1px solid #ffe7ff75;
+}
+.sale-recap-event-heading>div:last-child{min-width:0}
+.sale-recap-event-heading h2{
+  font-size:clamp(27px,3vw,40px)!important;line-height:1.07;
+  letter-spacing:-1.55px;margin:5px 0 0;color:#fff;
+  text-shadow:0 3px 19px #05051ca3;
+}
+.sale-recap-event-facts{display:grid;gap:9px;font-size:12px;color:#e2d6ee}
+.sale-recap-event-facts>div{display:flex;gap:9px;align-items:flex-start;line-height:1.55}
+.sale-recap-event-facts>div>span:first-child{color:#88efe1;min-width:17px;font-size:15px}
+.sale-recap-event-bottom{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  border-top:1px dashed #ddaafc69;
+  padding-top:15px;margin-top:auto;
+  letter-spacing:1.25px;color:#d9b4f5;font-size:9px;font-weight:800;
+}
+.ceyrl-sale-overlay .sale-recap-profit{
+  margin:0!important;min-height:342px;padding:0!important;
+  border:0!important;border-radius:0!important;
+  display:flex;flex-direction:column;justify-content:space-between;gap:18px;
+  position:relative;isolation:isolate;
+  background:
+    radial-gradient(ellipse at 70% 58%,#125f7760,transparent 62%),
+    radial-gradient(ellipse at 25% 35%,#6c25ad52,transparent 63%),
+    linear-gradient(135deg,#261339,#0c132e 75%)!important;
+}
+.ceyrl-sale-overlay .sale-recap-profit:before{
+  content:"";position:absolute;inset:20% -40%;opacity:.56;
+  background:repeating-radial-gradient(ellipse at 45% 85%,transparent 0,transparent 13px,#a455f589 14px,transparent 15px,transparent 27px);
+  animation:sale-wave-flow 18s ease-in-out infinite alternate;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 27% 76%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 27% 76%,transparent);
+}
+.ceyrl-sale-overlay .sale-recap-profit:after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,transparent 20%,#a668f110 46%,#55e5df1c 55%,transparent 75%);
+  background-size:230% 100%;animation:sale-profit-sheen 12s ease-in-out infinite;
+}
+@keyframes sale-profit-sheen{0%,27%{background-position:100% 50%}80%,100%{background-position:0% 50%}}
+.sale-recap-profit-top,.sale-recap-profit-bottom{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:21px 24px 0;
+  font-size:9px;letter-spacing:1.4px;font-weight:800;color:#b5a6ce;
+  position:relative;z-index:1;
+}
+.sale-recap-profit-indicator{
+  font-size:9px;letter-spacing:0;white-space:nowrap;padding:6px 10px;
+  border-radius:100px;background:#4c2e6ba3;
+  border:1px solid #ae7ee177;color:#e9d4fe;
+}
+.sale-recap-profit-main{position:relative;z-index:1;padding:0 20px}
+.sale-recap-profit-main .sale-recap-profit-label{font-size:11px;letter-spacing:1.5px;color:#dccce9}
+.sale-recap-profit-main strong{
+  margin:15px 0 8px!important;
+  font-size:clamp(36px,4.5vw,66px)!important;
+  line-height:1.1!important;
+  letter-spacing:-2.1px!important;
+  overflow-wrap:anywhere;
+}
+.sale-recap-profit-main .sale-recap-roi{font-size:17px;color:#f0defb;font-weight:760}
+.sale-recap-profit-caption{max-width:360px;margin:14px auto 0;line-height:1.55;color:#b7b1c9;font-size:10px}
+.sale-recap-profit-bottom{
+  padding:14px 24px 20px;
+  border-top:1px solid #a46fd32d;
+  color:#aba3bd;font-size:9px;letter-spacing:.3px;font-weight:590;
+}
+.sale-recap-summary-strip{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;
+  border:1px solid #69458eb5;border-top:0;
+  border-radius:0 0 19px 19px;
+  background:linear-gradient(100deg,#36214fe0,#201936ec 48%,#1b233fe0);
+  box-shadow:0 10px 31px #04021840;
+  margin:0 0 27px;
+}
+.sale-recap-summary-strip>div{
+  display:flex;flex-direction:column;justify-content:center;gap:7px;
+  padding:21px 19px;min-width:0;
+}
+.sale-recap-summary-strip>div:not(:last-child){border-right:1px solid #74519867}
+.sale-recap-summary-strip span{
+  color:#b5a6ce;letter-spacing:1.15px;font-size:9px;font-weight:810;
+}
+.sale-recap-summary-strip strong{
+  color:#f6efff;font-size:clamp(17px,2vw,24px);font-weight:790;
+  letter-spacing:-.45px;overflow-wrap:anywhere;
+}
+.sale-recap-summary-strip strong.sale-positive{color:#69eccb}
+.sale-recap-summary-strip strong.sale-negative{color:#ffa3c8}
+.sale-recap-summary-strip strong.sale-unknown{color:#dfc6f8}
+.sale-recap-section-heading{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:15px;
+  margin:4px 0 17px;
+}
+.sale-recap-section-heading>div>span{font-size:10px;font-weight:800;letter-spacing:1.9px;color:#c18af5}
+.sale-recap-section-heading h3{font-size:23px;letter-spacing:-.7px;margin:8px 0 0;color:#f9f4ff}
+.sale-recap-section-code{font-size:10px;color:#9f8bba;letter-spacing:1.7px;white-space:nowrap;font-weight:790}
+.ceyrl-sale-overlay .sale-recap-tabs{
+  display:flex;gap:7px;padding:6px;margin:0 0 20px;
+  border:1px solid #68458c;border-radius:13px;
+  background:linear-gradient(100deg,#271a42aa,#1b1838cc);
+}
+.ceyrl-sale-overlay .sale-recap-tabs button{
+  flex:1;min-height:43px;padding:10px 7px;font-size:12px;
+  font-weight:730;transition:background .2s ease,box-shadow .2s ease
+}
+.ceyrl-sale-overlay .sale-recap-tabs button[aria-selected=true]{
+  background:linear-gradient(110deg,#a35cf8,#6c3cae 75%)!important;
+  border-color:#cb9bff!important;box-shadow:0 3px 18px #b251ed4d!important;
+}
+.ceyrl-sale-overlay .sale-recap-metric-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px;
+}
+.ceyrl-sale-overlay .sale-recap-stat{
+  padding:20px 17px;min-height:95px;
+  background:linear-gradient(155deg,#382254c9,#232140c9)!important;
+  border-color:#8059a7a8!important;
+  box-shadow:inset 0 1px #ffffff0b;
+}
+.ceyrl-sale-overlay .sale-recap-stat small{font-size:11px;margin-bottom:12px;color:#b9a4ca}
+.ceyrl-sale-overlay .sale-recap-stat strong{font-size:clamp(17px,1.8vw,24px);letter-spacing:-.5px}
+.ceyrl-sale-overlay .sale-recap-overview-grid{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)!important;gap:12px;margin-top:12px}
+.ceyrl-sale-overlay .sale-recap-little-card{
+  padding:22px!important;
+  background:linear-gradient(130deg,#281939ec,#16192fee)!important;
+  border-color:#8157ac95!important;
+}
+.ceyrl-sale-overlay .sale-recap-little-card>span{color:#c6b2dc;font-size:12px}
+.ceyrl-sale-overlay .sale-recap-little-card>strong{font-size:40px;color:#64edca;text-shadow:0 0 16px #48e8cd29}
+.ceyrl-sale-overlay .sale-recap-little-card dl{font-size:12px;grid-template-columns:115px minmax(0,1fr);gap:12px 10px}
+.ceyrl-sale-overlay .sale-recap-little-card dt{color:#a895bc}
+.ceyrl-sale-overlay .sale-recap-little-card dd{color:#f2eafd}
+.ceyrl-sale-overlay .sale-recap-ticket{
+  width:60px;height:60px;border-radius:9px;border-color:#99eae2;
+  transform:rotate(-3deg);box-shadow:0 8px 22px #35e3bd24;
+  transition:transform .22s ease,box-shadow .22s ease;
+}
+.ceyrl-sale-overlay .sale-recap-ticket:nth-child(2n){transform:rotate(4deg)}
+.ceyrl-sale-overlay .sale-recap-ticket:hover{transform:translateY(-5px) rotate(0deg);box-shadow:0 12px 28px #45efdb66}
+.ceyrl-sale-overlay .sale-recap-ticket:before,.ceyrl-sale-overlay .sale-recap-ticket:after{box-shadow:60px 0 #1a1237}
+.ceyrl-sale-overlay .sale-recap-ticket span{font-size:7px}
+.ceyrl-sale-overlay .sale-recap-ticket b{font-size:25px}
+.ceyrl-sale-overlay .sale-recap-controls{gap:10px}
+.ceyrl-sale-overlay .sale-recap-controls .btn{
+  padding:11px 19px!important;border-radius:11px!important;
+  min-height:43px;font-size:12px!important;
+}
+.ceyrl-sale-mode-full .sale-recap-controls{justify-content:flex-end}
+.sale-recap-perforation{
+  height:27px;position:relative;overflow:visible;
+  border-top:2px dashed #9866c85b;margin:32px 0 0;
+}
+.sale-recap-perforation span{position:absolute;top:-13px;width:25px;height:25px;border-radius:50%;background:#120d29;border:1px solid #6a468b}
+.sale-recap-perforation span:first-child{left:-52px}
+.sale-recap-perforation span:last-child{right:-52px}
+.ceyrl-sale-overlay .sale-recap-footer{border-top:0;color:#c1a3d5;padding:8px 0 4px}
+.ceyrl-sale-overlay :is(button,a):focus-visible{outline:2px solid #61f6dc!important;outline-offset:3px!important}
+@media(max-width:1050px){
+  .ceyrl-sale-overlay .sale-recap-sheet{width:min(930px,calc(100vw - 32px))!important}
+  .ceyrl-sale-mode-full .sale-recap-sheet{width:min(1050px,calc(100vw - 24px))!important}
+  .sale-recap-event-inner{padding:25px}
+  .sale-recap-event-heading h2{font-size:31px!important}
+  .sale-recap-artist-avatar{width:63px;height:63px;font-size:34px}
+  .sale-recap-profit-main strong{font-size:49px!important}
+  .sale-recap-summary-strip>div{padding:17px 13px}
+}
+@media(max-width:800px){
+  .ceyrl-sale-overlay{padding:0!important}
+  .ceyrl-sale-overlay .sale-recap-sheet,
+  .ceyrl-sale-mode-full .sale-recap-sheet{
+    width:100vw!important;height:100dvh!important;max-height:none!important;border-radius:0!important;border:0!important;
+  }
+  .sale-recap-stage{grid-template-columns:1fr;margin-top:15px}
+  .ceyrl-sale-overlay .sale-recap-event{border-right:0;border-bottom:1px solid #a076d28b;min-height:250px}
+  .sale-recap-event-inner{min-height:265px;padding:20px}
+  .ceyrl-sale-overlay .sale-recap-profit{min-height:240px}
+  .sale-recap-profit-main strong{font-size:46px!important}
+  .sale-recap-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sale-recap-summary-strip>div{padding:16px}
+  .sale-recap-summary-strip>div:nth-child(2){border-right:0}
+  .sale-recap-summary-strip>div:nth-child(-n+2){border-bottom:1px solid #74519867}
+  .ceyrl-sale-overlay .sale-recap-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .ceyrl-sale-overlay .sale-recap-overview-grid{grid-template-columns:1fr!important}
+  .sale-recap-section-heading h3{font-size:20px}
+  .ceyrl-sale-overlay .sale-recap-tabs button{font-size:11px;min-height:39px}
+  .sale-recap-perforation span:first-child{left:-39px}
+  .sale-recap-perforation span:last-child{right:-39px}
+}
+@media(max-width:480px){
+  .sale-recap-header{padding:11px 15px!important;min-height:59px}
+  .sale-recap-symbol{width:30px;height:30px;font-size:16px}
+  .sale-recap-brand{font-size:18px!important}
+  .sale-recap-header-context{display:none}
+  .sale-recap-private-tag{font-size:9px;padding:6px}
+  .ceyrl-sale-overlay .sale-recap-scroll{padding-inline:13px!important}
+  .sale-recap-event-heading{gap:12px}
+  .sale-recap-event-heading h2{font-size:26px!important}
+  .sale-recap-artist-avatar{width:51px;height:51px;font-size:28px}
+  .sale-recap-overline{font-size:9px;letter-spacing:1.2px}
+  .sale-recap-event-facts{font-size:11px}
+  .sale-recap-profit-main strong{font-size:40px!important}
+  .ceyrl-sale-overlay .sale-recap-tabs{gap:2px}
+  .ceyrl-sale-overlay .sale-recap-tabs button{font-size:10px;padding:9px 2px}
+  .ceyrl-sale-overlay .sale-recap-stat{padding:13px}
+  .ceyrl-sale-overlay .sale-recap-little-card dl{grid-template-columns:100px 1fr;font-size:11px}
+  .sale-recap-summary-strip strong{font-size:19px}
+}
+@media(max-height:760px) and (min-width:801px){
+  .ceyrl-sale-overlay .sale-recap-sheet{height:min(94dvh,950px)!important}
+  .sale-recap-event-inner{gap:14px}
+  .ceyrl-sale-overlay .sale-recap-event,.ceyrl-sale-overlay .sale-recap-profit{min-height:300px}
+  .sale-recap-event-inner{padding-block:22px}
+  .sale-recap-stage{margin-top:18px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sale-recap-event-shimmer,.ceyrl-sale-overlay .sale-recap-profit:after{animation:none!important}
+  .ceyrl-sale-overlay .sale-recap-ticket{transition:none!important}
+  .ceyrl-sale-overlay .sale-recap-ticket:hover{transform:none!important}
+}
+body.motion-off .sale-recap-event-shimmer,
+body.motion-off .ceyrl-sale-overlay .sale-recap-profit:after{animation:none!important}
+@media print{
+  body.ceyrl-sale-open .sale-recap-stage{border-color:#bbb!important;box-shadow:none!important}
+  body.ceyrl-sale-open .sale-recap-event,body.ceyrl-sale-open .sale-recap-profit{
+    background:#eee!important;min-height:200px!important;color:#111!important
+  }
+  body.ceyrl-sale-open .sale-recap-event *,body.ceyrl-sale-open .sale-recap-profit *{
+    color:#111!important;text-shadow:none!important;
+  }
+  body.ceyrl-sale-open .sale-recap-summary-strip{background:white!important;border:1px solid #bbb!important}
+  body.ceyrl-sale-open .sale-recap-summary-strip *{color:#111!important}
+  body.ceyrl-sale-open .sale-recap-tabs{display:none!important}
+  body.ceyrl-sale-open .sale-recap-perforation{display:none!important}
+}
