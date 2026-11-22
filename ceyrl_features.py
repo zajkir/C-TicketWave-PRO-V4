@@ -141,7 +141,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                 sources.append("Ticketmaster")
             except HTTPException:
                 warnings.append("Ticketmaster search unavailable")
-        if kind!="sports" and not sport_query:
+        if kind!="sports" and not sport_query and not matches:
             # Primary keyless worldwide tour dates provider. Do NOT query
             # StungEvents on each successful Gigora search: it is optional
             # and can currently time out or rate-limit unrelated requests.
