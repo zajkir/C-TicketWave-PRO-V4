@@ -26,7 +26,7 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import urlencode, urlsplit, quote
 
 import httpx
 from argon2 import PasswordHasher
@@ -289,7 +289,11 @@ async def headers(request: Request, call_next):
     response = await call_next(request)
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(), payment=()'
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['Cross-Origin-Resource-Policy'] = 'same-origin'
+    response.headers['X-Permitted-Cross-Domain-Policies'] = 'none'
     response.headers['Cache-Control'] = 'no-store'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; img-src 'self' data:; font-src 'self'; "
@@ -302,12 +306,17 @@ async def headers(request: Request, call_next):
 
 
 def enforce_origin(request: Request):
-    origin = request.headers.get('origin')
+    # Never trust request.base_url/Host as an allowed origin; both can be
+    # attacker-controlled through a reverse proxy or forged Host header.
+    origin = request.headers.get('origin', '').strip()
+    site = request.headers.get('sec-fetch-site','').lower().strip()
+    if site == 'cross-site':
+        raise HTTPException(403, 'Cross-site requests are not allowed.')
     if not origin:
         return
     allowed = {BOOTSTRAP} if BOOTSTRAP else set()
-    # For reverse-proxy setups, exact public origin must be configured.
-    allowed.add(str(request.base_url).rstrip('/'))
+    if DEV_TOKENS:
+        allowed.update(('http://127.0.0.1:8765','http://localhost:8765','http://testserver'))
     if origin not in allowed:
         raise HTTPException(403, 'Origin not allowed.')
 
@@ -323,6 +332,10 @@ def create_session(uid: str):
         db.execute('DELETE FROM sessions WHERE expires_at < ?', (stamp(),))
         db.execute('INSERT INTO sessions(token_hash,user_id,csrf,expires_at) VALUES (?,?,?,?)',
                    (digest(token), uid, csrf, plus(hours=SESSION_HOURS)))
+        # Limit long-lived sessions after repeated logins or lost devices.
+        db.execute('''DELETE FROM sessions WHERE user_id=? AND token_hash NOT IN
+            (SELECT token_hash FROM sessions WHERE user_id=?
+             ORDER BY expires_at DESC,rowid DESC LIMIT 5)''',(uid,uid))
         db.execute('UPDATE users SET last_login=? WHERE id=?', (stamp(),uid))
     return token, csrf
 
@@ -384,14 +397,14 @@ def email_link(to: str, subject: str, message: str):
         raise HTTPException(503, 'Could not send the verification email. Contact the administrator.')
 
 
-def throttle(bucket: str, success: bool = False):
+def throttle(bucket: str, success: bool = False, limit: int = 8):
     bucket = digest(bucket)[:35]
     with connection(AUTH_DB, True) as db:
         row = select(db,'SELECT * FROM auth_attempts WHERE bucket=?',(bucket,),True)
         if success:
             db.execute('DELETE FROM auth_attempts WHERE bucket=?',(bucket,))
             return
-        if row and row['window_end'] > stamp() and row['failures'] >= 8:
+        if row and row['window_end'] > stamp() and row['failures'] >= limit:
             raise HTTPException(429, 'Too many attempts. Try later.')
         if not row or row['window_end'] < stamp():
             db.execute('REPLACE INTO auth_attempts VALUES (?,?,?)', (bucket, 1, plus(minutes=15)))
@@ -492,6 +505,7 @@ def login(payload: Login, request: Request):
     enforce_origin(request)
     email=safe_email(payload.email)
     bucket='login:'+(request.client.host if request.client else '')+':'+email
+    throttle('login-ip:'+(request.client.host if request.client else 'unknown'),limit=45)
     throttle(bucket)
     with connection(AUTH_DB) as db:
         user=select(db,'SELECT * FROM users WHERE email=?',(email,),True)
@@ -708,6 +722,7 @@ class NewPassword(BaseModel):
 def change_password(payload: NewPassword,request: Request):
     user=require_user(request,True)
     password_policy(payload.new_password)
+    throttle('change-password:'+user['id'],limit=12)
     with connection(AUTH_DB,True) as db:
         row=select(db,'SELECT password_hash FROM users WHERE id=?',(user['id'],),True)
         if row['password_hash']:
@@ -869,16 +884,24 @@ def download_pdf(ticket_id:int,attachment_id:int,request:Request):
         a=select(db,'SELECT * FROM attachments WHERE ticket_id=? AND id=?',(ticket_id,attachment_id),True)
     if not a:
         raise HTTPException(404,'PDF not found in your account.')
-    path=storage_dir(user['id'])/'vault'/a['path']
+    vault=(storage_dir(user['id'])/'vault').resolve()
+    path=(vault/a['path']).resolve()
+    if not path.is_relative_to(vault):
+        raise HTTPException(404,'Invalid attachment path.')
     if not path.is_file():
         raise HTTPException(404,'Stored document is missing.')
     try:
         blob=personal_key(user['id']).decrypt(path.read_bytes())
     except Exception:
         raise HTTPException(500,'Cannot decrypt the PDF; check your backup encryption key.')
-    fname=a['filename'].replace('"','').replace('\r','').replace('\n','')
+    # Use a safe ASCII fallback plus RFC5987 for international names, never
+    # interpolate raw filenames into HTTP response headers.
+    original=a['filename'].replace('\r','').replace('\n','')[:180]
+    fallback=re.sub(r'[^A-Za-z0-9._ -]','_',original).strip(' .') or 'ticket.pdf'
+    encoded=quote(original,safe='')
+    disposition='attachment; filename="'+fallback+'"; filename*=UTF-8\'\''+encoded
     return Response(content=blob,media_type='application/pdf',headers={
-        'Content-Disposition':'attachment; filename="'+fname+'"',
+        'Content-Disposition':disposition,
         'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'})
 
 
