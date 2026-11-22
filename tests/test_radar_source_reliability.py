@@ -6,6 +6,7 @@ isolated explicit imports. External provider calls are always mocked in CI.
 from fastapi import HTTPException
 import ceyrl_features
 import ceyrl_radar
+import ceyrl_concerthub
 from test_v5 import app_clients, signup
 
 
@@ -28,6 +29,7 @@ def test_keyless_mode_explicitly_limits_catalog_for_calins_concert(app_clients,m
     checked=[]
     monkeypatch.setattr(ceyrl_radar,"request_public",lambda q,c:
         (checked.append((q,c)) or []))
+    monkeypatch.setattr(ceyrl_concerthub,"request_concerthub",lambda q:[])
     status=alice.get("/api/x/radar/status").json()
     assert status["connected"] is True
     assert status["key_required"] is False
@@ -41,8 +43,8 @@ def test_keyless_mode_explicitly_limits_catalog_for_calins_concert(app_clients,m
     data=result.json()
     assert data["events"]==[]
     assert data["requires_server_key"] is True
-    assert data["sources_checked"]==["Ticket Fairy"]
-    assert "CTW_TICKETMASTER_API_KEY" in data["coverage_note"]
+    assert data["sources_checked"]==["Ticket Fairy","ConcertHub (Poland)"]
+    assert "without an API key" in data["coverage_note"]
     assert checked==[("Calin","")]
 
 
@@ -100,6 +102,7 @@ def test_failed_shared_key_not_misrepresented_as_no_concert(app_clients,monkeypa
     monkeypatch.setattr(ceyrl_features,"call_tm",lambda *args,**kwargs:
         (_ for _ in ()).throw(HTTPException(403,"Provider rejected key")))
     monkeypatch.setattr(ceyrl_radar,"request_public",lambda q,c:[])
+    monkeypatch.setattr(ceyrl_concerthub,"request_concerthub",lambda q:[])
     response=alice.get("/api/x/radar/search?q=Calin&kind=music")
     assert response.status_code==200,response.text
     payload=response.json()
@@ -107,7 +110,7 @@ def test_failed_shared_key_not_misrepresented_as_no_concert(app_clients,monkeypa
     assert payload["partial_outage"] is True
     assert payload["provider_warnings"]
     assert "Ticketmaster" in payload["provider_warnings"][0]
-    assert payload["sources_checked"]==["Ticket Fairy"]
+    assert payload["sources_checked"]==["Ticket Fairy","ConcertHub (Poland)"]
     assert "Gigora" not in str(payload)
     assert "StungEvents" not in str(payload)
 
