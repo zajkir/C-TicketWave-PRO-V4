@@ -257,7 +257,7 @@ async function renderXRadar(){
     '<h2>Find what’s next.<br><em>Stay one step ahead.</em></h2>'+
     '<p>Search upcoming events and follow artists or event keywords. Import verified listings into your personal calendar with one click.</p>'+
     '</div><span class="x-hero-decoration" aria-hidden="true">⌾</span></section>'+
-    '<div class="x-radar-status">'+xTag('Keyless search enabled','green')+
+    '<div class="x-radar-status">'+xTag('No personal API key needed','neutral')+
     '<span>'+xEsc(status.provider)+'</span></div>'+
     '<p class="x-description x-radar-coverage">'+xEsc(status.coverage_note||'Only events listed by the source are available.')+'</p>'+
     '<form class="x-radar-form" id="x-radar-form"><input name="query" id="x-radar-query" minlength="2" maxlength="80" required '+
