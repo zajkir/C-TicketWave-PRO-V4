@@ -20,20 +20,43 @@
       '<a href="https://www.bandsintown.com/search?q=' + encoded + '" rel="noopener noreferrer" target="_blank">Bandsintown search ↗</a></section>';
   }
 
+  // Prevent cached searches from one signed-in person appearing for the next
+  // account when the same browser is used without a full reload.
+  window.resetPrivateRadarState = function resetPrivateRadarState() {
+    radarRequestSerial++;
+    xRadarEvents = [];
+    xRadarQuery = '';
+    xRadarCountry = '';
+    xRadarKind = 'all';
+    xRadarSource = '';
+    xRadarCoverage = '';
+  };
+
   // Display only actual provider data. Never generate placeholder tour dates,
   // availability or ticket prices that a provider did not confirm.
   xRadarResultsHtml = function studioEventCards(rows) {
     const safeRows = Array.isArray(rows) ? rows : [];
     return '<section class="x-panel x-radar-results studio-radar-results">' +
-      '<div class="studio-radar-ribbon"><strong>Verified source listings</strong><small>' +
+      '<div class="studio-radar-ribbon"><strong>Live source listings</strong><small>' +
       safeRows.length + ' result' + (safeRows.length === 1 ? '' : 's') + ' returned</small></div>' +
       '<div class="x-radar-grid">' + safeRows.map(e => {
         const isSport = /sport|football|soccer|basketball|hockey/i.test(e.category || '');
         const icon = isSport ? '◈' : '♫';
         const location = [e.venue,e.city,e.country].filter(Boolean).join(' · ') || 'Venue not listed';
-        return '<article class="x-event-result">' +
-          '<div class="studio-event-cover" aria-hidden="true"><span>' + icon + '</span><div><strong>' +
-          branchSafe(e.category || 'Live event') + '</strong><small>Official provider listing</small></div></div>' +
+        // An image is optional. Only images hosted by the official media CDN
+        // approved on the backend can be inserted into the interface.
+        const cover = typeof e.image_url === 'string' &&
+          /^https:\/\/(?:s1\.ticketm\.net|images1\.ticketmaster\.com|images\.ticketmaster\.com)\//i.test(e.image_url)
+          ? e.image_url : '';
+        const visual = cover
+          ? '<div class="studio-event-cover studio-event-cover-photo">' +
+            '<img src="' + branchSafe(cover) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">' +
+            '<span class="studio-cover-overlay"><b>' + icon + '</b><strong>' +
+            branchSafe(e.category || 'Live event') + '</strong></span></div>'
+          : '<div class="studio-event-cover" aria-hidden="true"><span>' + icon +
+            '</span><div><strong>' + branchSafe(e.category || 'Live event') +
+            '</strong><small>Official source listing</small></div></div>';
+        return '<article class="x-event-result">' + visual +
           '<div class="x-card-top"><span class="x-eyebrow">' + branchSafe(e.provider || xRadarSource) + '</span>' +
           xTag(e.category || 'Event') + '</div><h3>' + branchSafe(e.name) + '</h3>' +
           '<p>▤ ' + branchSafe(e.local_date || e.starts_at || 'Date not confirmed') + '</p>' +
@@ -54,18 +77,20 @@
     const settled = await Promise.allSettled([api('/x/radar/status'), api('/x/radar/watches')]);
     if (app.page !== 'radar') return;
     const status = settled[0].status === 'fulfilled' ? settled[0].value : {global_concerts_enabled:false,provider:'Source status unavailable',coverage_note:'Source status is currently unavailable.'};
-    const watchState = settled[1].status === 'fulfilled' ? settled[1].value : {watches:[],hits:[]};
+    const watchLoadFailed = settled[1].status !== 'fulfilled';
+    const statusLoadFailed = settled[0].status !== 'fulfilled';
+    const watchState = watchLoadFailed ? {watches:[],hits:[]} : settled[1].value;
     const watches = Array.isArray(watchState.watches) ? watchState.watches : [];
     const hits = Array.isArray(watchState.hits) ? watchState.hits : [];
     const configured = !!status.global_concerts_enabled;
     const countries = [['','All countries'],['SK','Slovakia'],['CZ','Czechia'],['DE','Germany'],['AT','Austria'],['PL','Poland'],
-      ['GB','United Kingdom'],['US','United States'],['FR','France'],['IT','Italy'],['ES','Spain'],['NL','Netherlands']];
+      ['GB','United Kingdom'],['US','United States'],['IE','Ireland'],['FR','France'],['IT','Italy'],['ES','Spain'],['NL','Netherlands'],['BE','Belgium'],['CH','Switzerland'],['HU','Hungary'],['CA','Canada'],['AU','Australia']];
     page.innerHTML = heading('Event Radar', 'Search real event listings, save your searches and add confirmed dates to your calendar.') +
       '<section class="studio-radar-intro"><div><span class="x-eyebrow">CEYRL · EVENT DISCOVERY</span>' +
       '<h2>Find the events worth going to.</h2>' +
       '<p>Artists, festivals, sports and venues in one focused workspace. Search is free to use; no personal API key needed.</p></div>' +
       '<span class="studio-radar-state"><i class="studio-status-dot ' + (configured ? 'ready' : '') + '"></i>' +
-      (configured ? 'Global concert source configured' : 'Limited public coverage') + '</span></section>' +
+      (statusLoadFailed ? 'Source status unavailable' : (configured ? 'Global concert source configured' : 'Limited public coverage')) + '</span></section>' +
       '<section class="studio-radar-search"><p class="studio-radar-searchlabel">What are you looking for?</p>' +
       '<form class="x-radar-form" id="x-radar-form">' +
       '<input id="x-radar-query" name="query" type="search" minlength="2" maxlength="80" required autocomplete="off"' +
@@ -93,13 +118,15 @@
         '<div class="studio-radar-empty"><strong>Start discovering events</strong>' +
         '<p>Search above or choose a popular artist. Dates and ticket offers are shown only when a source returns them.</p></div>') +
       '</div></div><aside class="studio-radar-side" aria-label="My radar activity">' +
-      xPane('Saved searches', 'Private to your account · up to 15', watches.length ?
+      xPane('Saved searches', 'Private to your account · up to 15', watchLoadFailed ?
+        '<p class="x-description" role="alert">Saved searches could not be loaded. Open Event Radar again to retry.</p>' : watches.length ?
         watches.map(w => '<div class="x-watch-row"><div><b>' + branchSafe(w.query) + '</b><small>' +
           branchSafe(w.country || 'Worldwide') + ' · Last checked: ' +
           branchSafe(w.last_checked ? niceDate(w.last_checked) : 'Not yet') + '</small></div>' +
           '<button type="button" class="mini-btn" data-x-remove-watch="' + Number(w.id) + '">Remove</button></div>').join('') :
         '<p class="x-description">No saved searches yet. Search for an artist or event, then save it.</p>') +
-      xPane('Latest updates', 'Changes detected when you refresh', hits.length ?
+      xPane('Latest updates', 'Changes detected when you refresh', watchLoadFailed ?
+        '<p class="x-description">Updates are unavailable until saved searches load.</p>' : hits.length ?
         hits.slice(0,10).map(h => '<div class="x-watch-row"><div><b>' + branchSafe(h.name) +
           '</b><small>' + branchSafe(h.city || 'Location unknown') + ' · ' +
           branchSafe(h.starts_at || 'Date unconfirmed') + '</small></div></div>').join('') :
@@ -117,6 +144,8 @@
     const kind = document.getElementById('x-radar-kind')?.value || 'all';
     if (query.length < 2) return notify('Enter at least two characters to search.', true);
     xRadarQuery = query; xRadarCountry = country; xRadarKind = kind;
+    // Never display an old artist's results under a new failed search.
+    xRadarEvents = [];
     const serial = ++radarRequestSerial;
     const resultPanel = document.getElementById('x-radar-results');
     const submit = document.getElementById('studio-radar-submit');
@@ -147,7 +176,8 @@
       const panel = document.getElementById('x-radar-results');
       if (panel) panel.innerHTML = '<div class="x-api-error" role="alert"><strong>Search source temporarily unavailable.</strong><p>' +
         branchSafe(err.message || 'Please try again shortly.') +
-        '</p><p>Use official searches below, or try a different search later.</p></div>' +
+        '</p><p>Use official searches below, or try a different search later.</p>' +
+        '<button type="button" class="btn outline" data-studio-action="retry-radar">Retry search</button></div>' +
         studioLinks(query);
     } finally {
       if (serial === radarRequestSerial && app.page === 'radar' && submit) {
@@ -238,6 +268,7 @@
     if (!button) return;
     const action = button.dataset.studioAction;
     if (action === 'reload-settings') return renderStudioSettings();
+    if (action === 'retry-radar') return xRadarSearch();
     if (action === 'density') {
       const next = !document.body.classList.contains('studio-density-compact');
       document.body.classList.toggle('studio-density-compact', next);
