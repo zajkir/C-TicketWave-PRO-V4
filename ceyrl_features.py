@@ -12,6 +12,7 @@ import ceyrl_ai
 import ceyrl_radar
 import ceyrl_sports
 import ceyrl_music
+import ceyrl_gigora
 
 TM_EVENTS="https://app.ticketmaster.com/discovery/v2/events.json"
 TM_ONE="https://app.ticketmaster.com/discovery/v2/events/"
@@ -124,7 +125,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
         return key
 
     def discover_events(user,path,query,country,kind="all"):
-        """Search several real sources; avoid invented concerts or ticket prices."""
+        """Discover actual published events; a provider outage cannot invent dates."""
         matches=[]
         sources=[]
         warnings=[]
@@ -139,39 +140,46 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                     ((payload.get("_embedded") or {}).get("events") or [])[:20]]
                 sources.append("Ticketmaster")
             except HTTPException:
-                warnings.append("Ticketmaster is temporarily unavailable")
+                warnings.append("Ticketmaster search unavailable")
         if kind!="sports" and not sport_query:
-            concerts,diag=ceyrl_music.search(query,country,kind)
-            matches.extend(concerts)
-            sources.extend(diag.get("checked",[]))
-            warnings.extend(diag.get("errors",[]))
-        # Ticket Fairy is less complete for major artists; use it when the
-        # broader concert sources have no hits.
+            # Primary keyless worldwide tour dates provider. Do NOT query
+            # StungEvents on each successful Gigora search: it is optional
+            # and can currently time out or rate-limit unrelated requests.
+            gigora,info=ceyrl_gigora.search(query,country,kind)
+            matches.extend(gigora)
+            sources.extend(info.get("checked",[]))
+            warnings.extend(info.get("errors",[]))
+            if not gigora and not matches:
+                backup,info=ceyrl_music.search(query,country,kind)
+                matches.extend(backup)
+                sources.extend(info.get("checked",[]))
+                warnings.extend(info.get("errors",[]))
         if kind!="sports" and not matches:
             try:
                 matches += ceyrl_radar.search_public(query,country)
                 sources.append("Ticket Fairy")
             except HTTPException:
-                warnings.append("Ticket Fairy is temporarily unavailable")
+                warnings.append("Ticket Fairy search unavailable")
         if sport_query:
-            sports,diag=ceyrl_sports.search(query,country,kind)
+            sports,info=ceyrl_sports.search(query,country,kind)
             matches.extend(sports)
-            sources.extend(diag.get("checked",[]))
-            warnings.extend(diag.get("errors",[]))
+            sources.extend(info.get("checked",[]))
+            warnings.extend(info.get("errors",[]))
         if not sources:
-            raise HTTPException(502,
-                "Event sources are currently unavailable. Try again later.")
+            raise HTTPException(502,"No live event search provider is currently reachable. Open an official search link to check listings.")
         items=ceyrl_music._distinct(
-            [v for v in matches if v.get("id") and v.get("name")]
+            [item for item in matches if item.get("id") and item.get("name")]
         )
-        # Keep separate provider labels; a visible source URL matters more than
-        # an unreliable claim that a major artist has no upcoming shows.
-        return items[:40]," + ".join(dict.fromkeys(sources)),{
-            "sources_checked":list(dict.fromkeys(sources)),
+        checked=list(dict.fromkeys(sources))
+        return items[:40]," + ".join(checked),{
+            "sources_checked":checked,
             "provider_warnings":warnings,
-            "coverage_note":("Concert dates come from public event catalogs. "
-                 "Not all artists or shows are indexed, and ticket availability is not guaranteed. "
-                 "Use the artist's official page or linked ticketing sources for confirmation.")
+            "partial_outage":bool(warnings),
+            "coverage_note":(
+                "Searches use independent live music and sports catalogs. "
+                "No result does not mean there is no concert. Dates are shown "
+                "only when sources publish them, and ticket availability is unverified."
+            )
         }
 
     @app.get("/api/x/shield")
@@ -233,7 +241,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                     os.getenv("TICKETMASTER_API_KEY","").strip())
         return {"connected":True,"key_required":False,"personal_key":personal,
                 "server_ticketmaster":shared,"watch_count":count,
-                "provider":"StungEvents + Ticket Fairy + sports schedules" +
+                "provider":"Gigora concerts + Ticket Fairy + sports schedules" +
                            (" + Tickets.dev" if os.getenv("CTW_TICKETS_DEV_API_KEY","").strip() else "") +
                            (" + Ticketmaster" if shared or personal else ""),
                 "coverage_note":"Search popular artists, concerts and sports without your own key. Catalog coverage varies; a server-side integration can expand results.",
@@ -371,7 +379,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
     def radar_import(external_id:str,request:Request):
         user,path=user_db(request,True)
         ceyrl_radar.rate_limit(auth_db,connection,user["id"],"import")
-        if external_id.startswith(("tf:","sp:","se:","td:")):
+        if external_id.startswith(("tf:","sp:","se:","td:","gi:")):
             with connection(path,True) as db:
                 tm=ceyrl_radar.lookup(db,external_id)
         else:
