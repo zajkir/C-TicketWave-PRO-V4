@@ -173,6 +173,10 @@
       if(cc) cc.value='';
       if(kind) kind.value='all';
       xRadarCountry='';xRadarKind='all';
+      if ((root.querySelector('#x-radar-query')?.value.trim() || '').length >= 2) {
+        xRadarSearch().catch(notifyError);
+        return;
+      }
     }
     updateVisible();
   });
@@ -182,7 +186,14 @@
     if(id==='ceyrl-date-from')state.from=value;
     else if(id==='ceyrl-date-to')state.to=value;
     else if(id==='ceyrl-results-sort')state.sort=value;
-    else return;
+    else if(id==='x-radar-country' || id==='x-radar-kind') {
+      // Country/category are server-side filters, so refetch rather than
+      // pretending previously returned rows match the new selection.
+      if ((root.querySelector('#x-radar-query')?.value.trim() || '').length >= 2) {
+        xRadarSearch().catch(notifyError);
+      }
+      return;
+    } else return;
     updateVisible();
   });
   function updateVisible(){
