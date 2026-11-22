@@ -387,7 +387,7 @@ function initXPages(){
       if(btn.dataset.xArtist){
         $('#x-radar-query').value=btn.dataset.xArtist;
         $('#x-radar-kind').value='music';
-        $('#x-radar-country').value='';
+        // Keep an explicitly selected country when using an artist shortcut.
         return xRadarSearch();
       }
       if(btn.dataset.xExample){$('#x-chat-question').value=btn.dataset.xExample;return xAskCopilot()}
@@ -422,9 +422,13 @@ function initXPages(){
       }
       if(action==='radar-refresh'){
         btn.disabled=true;
-        const result=await api('/x/radar/refresh',{method:'POST'});
-        notify('Radar refreshed: '+result.new+' new events, '+result.updated+' changed.');
-        return renderXRadar();
+        try{
+          const result=await api('/x/radar/refresh',{method:'POST'});
+          notify('Radar refreshed: '+result.new+' new events, '+result.updated+' changed.');
+          return await renderXRadar();
+        }finally{
+          if(btn.isConnected)btn.disabled=false;
+        }
       }
     }catch(error){notifyError(error)}
   });
