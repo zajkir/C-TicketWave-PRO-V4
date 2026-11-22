@@ -2,6 +2,25 @@
 
 A professional, private-by-design ticket and sales manager with a new responsive navy UI, real backend APIs and independent database/PDF storage for **every registered user**.
 
+## Event Radar — global artist and concert expansion
+
+The main **Event Radar** now lets users quickly search **Noah Kahan, Nickelback, BTS, Coldplay, Post Malone, The Weeknd, Morgan Wallen, Billie Eilish, Taylor Swift, Ed Sheeran, Dua Lipa, Olivia Rodrigo, Imagine Dragons, Metallica, Harry Styles, Sabrina Carpenter, Bad Bunny, KATSEYE, RAYE, Tame Impala, Sam Fender, Calin, BLACKPINK and Stray Kids**. These are **search shortcuts, not fabricated event announcements**. Users can also enter **any artist or event name**. The search mode offers All events / Concerts & festivals / Sports & football.
+
+**Keyless sources for all logged-in users:**
+- [StungEvents public search API](https://docs.stungevents.com/docs) (read-only search, no key; provider documents limits and geographic coverage). Used fields: event title, ISO date, city, venue and provider event page. Strict trusted event URLs are constructed from public event slugs; arbitrary third-party purchase links are not trusted.
+- [Ticket Fairy public events](https://www.ticketfairy.com/developers), secondary source when earlier searches found no events.
+- TheSportsDB and selected public football schedules, as before.
+
+**Optional server-wide integrations — operator key only, no user keys:**
+- `CTW_TICKETMASTER_API_KEY=` uses [Ticketmaster Discovery API](https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/) to expand coverage to Ticketmaster concerts worldwide, subject to provider limits.
+- `CTW_TICKETS_DEV_API_KEY=` uses the [Tickets.dev event catalog](https://tickets.dev/docs), which indexes multiple ticket platforms. Event discovery is advertised as free but still **requires a provider API key** issued to the operator. Some separate capture endpoints can be paid. Put the key only into the hosting Environment / Secrets, never frontend code or GitHub.
+
+Event records display their source, event URL, date and venue. The app deduplicates obvious event/date/city overlaps; a listing is not a ticket-availability guarantee. When a provider lacks an unambiguous timezone-aware time, the app refuses automatic calendar import instead of guessing. The user must explicitly import a record into their own private calendar. Public queries are cached and rate-limited.
+
+**Limits:** Quick-search buttons never claim a future tour exists. A date only appears when a provider actually supplies it. Provider catalogs can be incomplete, outdated or unavailable. When no event is found, Ceyrl offers a live external Ticketmaster search, not an invented concert. Real provider connectivity and Bot-Hosting deployment must be verified separately.
+
+---
+
 ## Event Radar: no personal API keys + security hardening (November 2026)
 
 **Deployment:** Back up the entire persistent `CTW_DATA_DIR`, including `identity.sqlite3`, all `users/<uuid>/inventory.sqlite3` files, encrypted PDFs and each `.encryption_key`. Pull the latest `main`, restart the hosting process and refresh with Ctrl+F5. The site is expected to use HTTPS with `CTW_SECURE_COOKIES=1` and `CTW_PUBLIC_BASE_URL` set exactly to the public origin.
