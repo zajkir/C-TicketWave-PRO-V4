@@ -18,6 +18,10 @@ def test_studio_assets_are_loaded_without_replacing_the_existing_workspace(app_c
     assert client.get("/static/studio.css").status_code == 200
     assert client.get("/static/studio.js").status_code == 200
     assert client.get("/static/studio-refined.css").status_code == 200
+    csp = response.headers["content-security-policy"]
+    assert "https://s1.ticketm.net" in csp
+    assert "https://images1.ticketmaster.com" in csp
+    assert "script-src 'self'" in csp
 
 
 def test_session_management_is_private_and_requires_csrf(app_clients):
