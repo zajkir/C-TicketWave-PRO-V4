@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from urllib.parse import urlsplit
 from datetime import datetime, timezone
 import httpx
 from fastapi import HTTPException, Query, Request
@@ -64,11 +65,46 @@ def ensure_schema(db):
         external_id TEXT PRIMARY KEY,event_id INTEGER NOT NULL REFERENCES events(id),
         created_at TEXT NOT NULL)""")
 
+# Only render images and external links from approved provider-owned hosts.
+# Do not pass arbitrary provider strings into clickable links or image requests.
+_TM_LISTING_HOSTS = re.compile(
+    r"(?:www\\.)?ticketmaster\\.(?:com|co\\.uk|de|fr|es|it|nl|be|ch|ca|ie|cz|pl|at|hu|com\\.au)$",
+    re.IGNORECASE,
+)
+_TM_IMAGE_HOSTS = {"s1.ticketm.net", "images1.ticketmaster.com", "images.ticketmaster.com"}
+
+
+def safe_tm_url(value, *, image=False):
+    if not isinstance(value, str) or len(value) > 1000:
+        return ""
+    try:
+        parsed = urlsplit(value)
+        host = (parsed.hostname or "").lower()
+        if (parsed.scheme != "https" or not host or parsed.username or
+                parsed.password or parsed.port not in (None, 443)):
+            return ""
+        if image:
+            if host not in _TM_IMAGE_HOSTS:
+                return ""
+        elif not _TM_LISTING_HOSTS.fullmatch(host):
+            return ""
+        return value
+    except ValueError:
+        return ""
+
+
 def normalize_tm(item):
     start=(item.get("dates") or {}).get("start") or {}
     address=((item.get("_embedded") or {}).get("venues") or [{}])[0]
     loc=address.get("city") or {}
     raw_url=item.get("url") or ""
+    images=item.get("images") or []
+    image_url=""
+    for candidate in images if isinstance(images,list) else []:
+        if isinstance(candidate,dict) and candidate.get("ratio")=="16_9":
+            image_url=safe_tm_url(candidate.get("url"),image=True)
+            if image_url:
+                break
     return {
         "id":str(item.get("id",""))[:100], "name":str(item.get("name",""))[:200],
         "starts_at":str(start.get("dateTime") or "")[:35],
@@ -76,7 +112,8 @@ def normalize_tm(item):
         "venue":str(address.get("name",""))[:200],
         "city":str(loc.get("name",""))[:120],
         "country":str((address.get("country") or {}).get("name") or "")[:100],
-        "url":raw_url if raw_url.startswith("https://") else "",
+        "url":safe_tm_url(raw_url),
+        "image_url":image_url,
         "category":str(((item.get("classifications") or [{}])[0].get("segment") or {}).get("name") or "Concert")[:80],
         "provider":"Ticketmaster"
     }
