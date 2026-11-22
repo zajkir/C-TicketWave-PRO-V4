@@ -186,7 +186,6 @@
   }
   async function open(id,trigger){
     if(!Number.isInteger(id)||id<1)return;
-    const n=++serial;
     close();
     // close() invalidates pending requests; restart at a unique sequence.
     const token=++serial;
@@ -234,6 +233,10 @@
   };
   const prevNavigate=navigate;
   navigate=function navigateWithSaleRecap(page){close();return prevNavigate(page)};
+  const previousShowAuth=showAuth;
+  showAuth=function showAuthWithoutPrivateSaleData(mode){
+    close();return previousShowAuth(mode);
+  };
   root.addEventListener('click',e=>{
     if(app.page!=='sales')return;
     const btn=e.target.closest('[data-ceyrl-sale-open]');
