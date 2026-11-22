@@ -5,6 +5,14 @@ All providers are mocked. CI never claims to verify live 2026-27 concert dates.
 from datetime import datetime, timezone
 from urllib.parse import quote
 import ceyrl_music
+import ceyrl_gigora
+import pytest
+
+@pytest.fixture(autouse=True)
+def mock_extra_gigora(monkeypatch):
+    # These legacy StungEvents tests must stay independent of live Gigora.
+    monkeypatch.setattr(ceyrl_gigora,"search",lambda *args,**kwargs:
+        ([],{"checked":[],"errors":[]}))
 import ceyrl_radar
 from test_v5 import app_clients, signup
 
