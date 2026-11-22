@@ -332,18 +332,35 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
     @app.post("/api/x/radar/import/{external_id}")
     def radar_import(external_id:str,request:Request):
         user,path=user_db(request,True)
-        key=require_tm(user,path)
-        tm=normalize_tm(call_tm(key,{},external_id))
-        if not tm["starts_at"]:
-            raise HTTPException(422,"The API did not provide a reliable UTC event time. Add the event manually.")
+        ceyrl_radar.rate_limit(auth_db,connection,user["id"],"import")
+        if external_id.startswith("tf:"):
+            with connection(path,True) as db:
+                tm=ceyrl_radar.lookup(db,external_id)
+        else:
+            key=get_key(user,path)
+            if not key:
+                raise HTTPException(404,"Search for this event again before importing.")
+            tm=normalize_tm(call_tm(key,{},external_id))
+        if not tm.get("starts_at"):
+            raise HTTPException(422,"Event source did not provide a reliable UTC time.")
+        try:
+            when=datetime.fromisoformat(tm["starts_at"].replace("Z","+00:00"))
+            if when.tzinfo is None:
+                raise ValueError("timezone required")
+            starts_at=when.astimezone(timezone.utc).isoformat()
+        except (ValueError,TypeError):
+            raise HTTPException(422,"Event source date is not valid.")
         with connection(path,True) as db:
             ensure_schema(db)
-            old=db.execute("SELECT event_id FROM x_radar_imports WHERE external_id=?",(external_id,)).fetchone()
+            old=db.execute("SELECT event_id FROM x_radar_imports WHERE external_id=?",
+                           (external_id,)).fetchone()
             if old:return {"id":old["event_id"],"already_exists":True}
             cur=db.execute("""INSERT INTO events(title,starts_at,venue,city,country,category,notes,created_at)
                      VALUES(?,?,?,?,?,?,?,?)""",
-                     (tm["name"],tm["starts_at"],tm["venue"],tm["city"],tm["country"],
-                      tm["category"],"Imported from Ticketmaster Discovery API. Verify event and ticket details.",stamp()))
+                     (tm["name"],starts_at,tm["venue"],tm["city"],tm["country"],
+                      tm["category"],"Imported from "+
+                      tm.get("provider","public event provider")+
+                      ". Verify date and ticket details at the official source.",stamp()))
             db.execute("INSERT INTO x_radar_imports(external_id,event_id,created_at) VALUES(?,?,?)",
                        (external_id,cur.lastrowid,stamp()))
             log(db,"radar-import","event",cur.lastrowid)
