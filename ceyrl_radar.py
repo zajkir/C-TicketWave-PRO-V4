@@ -193,7 +193,7 @@ def lookup(db,external_id):
     if record.get("id")!=external_id or not _valid_provider_url(record.get("url")):
         raise HTTPException(409,"Cached event source is invalid. Search again.")
     if not record.get("starts_at") or not record.get("name"):
-        raise HTTPException(409,"This event has no verified start time.")
+        raise HTTPException(422,"The provider did not give a verifiable event time. Review the official source and add it manually.")
     return record
 
 
