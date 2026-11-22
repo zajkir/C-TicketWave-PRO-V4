@@ -3,6 +3,8 @@
 
 let xChatHistory=[];
 let xRadarEvents=[];
+let xRadarSource='Ticket Fairy public events';
+let xRadarCoverage='';
 let xRadarQuery='';
 let xRadarCountry='';
 
@@ -249,15 +251,14 @@ async function renderXRadar(){
   const [status,saved]=await Promise.all([api('/x/radar/status'),api('/x/radar/watches')]);
   if(app.page!=='radar')return;
   root.innerHTML=heading('Event Radar',
-    'Ticketmaster Discovery API event lookup and your own watchlist.',
-    '<button type="button" class="btn outline" data-x-action="x-radar-key">Connect API key ↗</button>')+
+    'Discover public events instantly, without any personal API key.')+
     '<section class="x-hero x-radar-hero"><div><span class="x-eyebrow">CEYRL / EVENT DISCOVERY</span>'+
     '<h2>Find what’s next.<br><em>Stay one step ahead.</em></h2>'+
     '<p>Search upcoming events and follow artists or event keywords. Import verified listings into your personal calendar with one click.</p>'+
     '</div><span class="x-hero-decoration" aria-hidden="true">⌾</span></section>'+
-    '<div class="x-radar-status">'+xTag(status.connected?'API connected':'API key required',status.connected?'green':'warning')+
-    '<span>'+xEsc(status.provider)+'</span><button class="x-link" type="button" data-x-action="radar-key">'+
-    (status.personal_key?'Replace personal key':'Set up my key')+'</button></div>'+
+    '<div class="x-radar-status">'+xTag('Keyless search enabled','green')+
+    '<span>'+xEsc(status.provider)+'</span></div>'+
+    '<p class="x-description x-radar-coverage">'+xEsc(status.coverage_note||'Only events listed by the source are available.')+'</p>'+
     '<form class="x-radar-form" id="x-radar-form"><input name="query" id="x-radar-query" minlength="2" maxlength="80" required '+
     'placeholder="Artist or event name…" value="'+xEsc(xRadarQuery)+'">'+
     '<select name="country" id="x-radar-country">'+
@@ -267,7 +268,7 @@ async function renderXRadar(){
     '</select><button class="btn primary" type="submit">Search events ↗</button></form>'+
     '<div class="x-search-actions"><button class="btn outline" type="button" data-x-action="radar-follow">+ Follow this search</button>'+
     '<button class="btn outline" type="button" data-x-action="radar-refresh">Refresh watched events</button></div>'+
-    '<div id="x-radar-results">'+(xRadarEvents.length?xRadarResultsHtml(xRadarEvents):xNote('Search for an artist or event to see verified Ticketmaster results.'))+'</div>'+
+    '<div id="x-radar-results">'+(xRadarEvents.length?xRadarResultsHtml(xRadarEvents):xNote('Enter an artist or event to search public listings. No personal API key required.'))+'</div>'+
     xPane('Your watched searches','Updates are checked when you click refresh; no scheduled background monitoring',
       saved.watches.length?saved.watches.map(w=>
         '<div class="x-watch-row"><div><b>'+xEsc(w.query)+'</b><small>'+xEsc(w.country||'Worldwide')+
@@ -280,18 +281,18 @@ async function renderXRadar(){
         xEsc(h.city)+' · '+xEsc(h.starts_at||'Date not confirmed')+'</small></div>'+
         xTag(h.status,h.status==='updated'?'warning':'green')+'</div>').join(''):
         '<p class="x-description">New events and changes will appear here after refreshing a watch.</p>')+
-    xNote('Discovery listings are third-party source data. Verify all dates, admission terms and availability on Ticketmaster.');
+    xNote('Coverage depends on the data source. Verify event date, ticket availability and transfer rules at the source.');
 }
 function xRadarResultsHtml(rows){
-  return '<section class="x-panel x-radar-results"><div class="x-panel-header"><div><h3>Ticketmaster results</h3><small>'+
+  return '<section class="x-panel x-radar-results"><div class="x-panel-header"><div><h3>Public event results</h3><small>'+
     rows.length+' events</small></div></div><div class="x-radar-grid">'+rows.map(e=>
-    '<article class="x-event-result"><div class="x-card-top"><span class="x-eyebrow">TICKETMASTER</span>'+
+    '<article class="x-event-result"><div class="x-card-top"><span class="x-eyebrow">'+xEsc(e.provider||xRadarSource)+'</span>'+
     xTag(e.category||'Event')+'</div><h3>'+xEsc(e.name)+'</h3>'+
     '<p>▤ '+xEsc(e.local_date||e.starts_at||'Date not confirmed')+'</p>'+
     '<p>⌾ '+xEsc([e.venue,e.city,e.country].filter(Boolean).join(' · ')||'Location unavailable')+'</p>'+
     '<div class="x-result-actions"><button class="btn primary" type="button" data-x-import="'+xEsc(e.id)+'" '+
     (!e.starts_at?'disabled title="UTC event time missing"':'')+'>Add to my calendar</button>'+
-    (e.url?'<a href="'+xEsc(e.url)+'" target="_blank" rel="noopener noreferrer">Official event ↗</a>':'')+
+    (e.url?'<a href="'+xEsc(e.url)+'" target="_blank" rel="noopener noreferrer">View source ↗</a>':'')+
     '</div></article>').join('')+'</div></section>';
 }
 
@@ -300,21 +301,20 @@ async function xRadarSearch(){
   const country=$('#x-radar-country')?.value||'';
   if(query.length<2)return;
   xRadarQuery=query;xRadarCountry=country;
-  $('#x-radar-results').innerHTML='<div class="x-loading">Searching Ticketmaster Discovery API…</div>';
+  $('#x-radar-results').innerHTML='<div class="x-loading">Searching public event listings…</div>';
   try{
     const data=await api('/x/radar/search?q='+encodeURIComponent(query)+'&country='+encodeURIComponent(country));
     xRadarEvents=data.events||[];
-    if(app.page==='radar')$('#x-radar-results').innerHTML=xRadarEvents.length?
-      xRadarResultsHtml(xRadarEvents):'<div class="x-empty">No matching events found.</div>';
+    xRadarSource=data.source||'Public events';
+    xRadarCoverage=data.coverage_note||'';
+    if(app.page==='radar')$('#x-radar-results').innerHTML=
+      '<p class="x-description x-radar-search-source">Source: '+xEsc(xRadarSource)+
+      '. '+xEsc(xRadarCoverage)+'</p>'+
+      (xRadarEvents.length?xRadarResultsHtml(xRadarEvents):
+      '<div class="x-empty">No matching events in this catalog. Try another artist or country.</div>');
   }catch(error){
     $('#x-radar-results').innerHTML='<div class="x-api-error">'+xEsc(error.message)+'</div>';
   }
-}
-function xRadarSetKey(){
-  openModal('Connect Ticketmaster Discovery API',[
-    {name:'api_key',label:'Your Ticketmaster Discovery API key',type:'password',wide:true,required:true,
-      placeholder:'Paste your private API key',help:'Stored encrypted in your own account. Never paste this key in chats or GitHub.'}
-  ],async v=>{await api('/x/radar/key',{method:'PUT',body:v});notify('Ticketmaster API key encrypted and connected.');},'Save integration');
 }
 
 function initXPages(){
@@ -345,7 +345,6 @@ function initXPages(){
         notify('Your AI conversation history was cleared.');
         return;
       }
-      if(action==='radar-key'||action==='x-radar-key')return xRadarSetKey();
       if(action==='x-refresh-shield')return renderXShield();
       if(action==='radar-follow'){
         const query=$('#x-radar-query').value.trim(),country=$('#x-radar-country').value;
