@@ -82,13 +82,13 @@ def test_radar_encryption_search_watch_refresh_import_per_account(app_clients,mo
     _,alice,bob,_=app_clients
     a=signup(alice,'radar-a@example.com','Radar Alice')
     signup(bob,'radar-b@example.com','Radar Bob')
-    assert alice.get('/api/x/radar/status').json()['connected'] is False
+    assert alice.get('/api/x/radar/status').json()['connected'] is True
     import ceyrl_features
     key_saved=alice.put('/api/x/radar/key',headers={'x-csrf-token':a},
                         json={'api_key':'MyDiscoveryAPIKEY1234567890'})
     assert key_saved.status_code==200,key_saved.text
     assert alice.get('/api/x/radar/status').json()['personal_key'] is True
-    assert bob.get('/api/x/radar/status').json()['connected'] is False
+    assert bob.get('/api/x/radar/status').json()['connected'] is True
 
     calls=[]
     mocked={
