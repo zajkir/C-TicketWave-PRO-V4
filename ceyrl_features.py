@@ -11,8 +11,6 @@ from ceyrl_shield import shield_report, delivery_score, VALID_METHODS
 import ceyrl_ai
 import ceyrl_radar
 import ceyrl_sports
-import ceyrl_music
-import ceyrl_gigora
 
 TM_EVENTS="https://app.ticketmaster.com/discovery/v2/events.json"
 TM_ONE="https://app.ticketmaster.com/discovery/v2/events/"
@@ -109,14 +107,22 @@ def call_tm(key,params,one_id=None):
 
 def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth_db):
     def get_key(user,path):
+        # The server key is shared securely with all registered users; it never
+        # leaves the backend. Prefer it over stale personal integrations.
+        shared=os.getenv("CTW_TICKETMASTER_API_KEY","").strip() or os.getenv("TICKETMASTER_API_KEY","").strip()
+        if shared:
+            return shared
+        # Keep previously configured per-user keys usable without exposing a
+        # personal-key setup prompt in the interface.
         with connection(path,True) as db:
             ensure_schema(db)
             row=db.execute("SELECT encrypted_secret FROM x_integrations WHERE name='ticketmaster'").fetchone()
         if row:
-            try:return personal_key(user["id"]).decrypt(row["encrypted_secret"]).decode()
-            except Exception:raise HTTPException(500,"Could not read Ticketmaster integration key.")
-        key=os.getenv("CTW_TICKETMASTER_API_KEY","").strip() or os.getenv("TICKETMASTER_API_KEY","").strip()
-        return key
+            try:
+                return personal_key(user["id"]).decrypt(row["encrypted_secret"]).decode()
+            except Exception:
+                raise HTTPException(500,"Cannot decrypt the legacy Ticketmaster integration.")
+        return ""
 
     def require_tm(user,path):
         key=get_key(user,path)
@@ -125,61 +131,59 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
         return key
 
     def discover_events(user,path,query,country,kind="all"):
-        """Discover actual published events; a provider outage cannot invent dates."""
-        matches=[]
+        """Read only from providers that we have actually verified reachable.
+
+        Gigora returned HTTP 402 and StungEvents HTTP 410 in live CI probes
+        on 2026-11-22. Do not call or advertise them as keyless sources.
+        """
+        events=[]
         sources=[]
         warnings=[]
         key=get_key(user,path)
         sport_query=ceyrl_sports.should_search(query,kind)
         if key and kind!="sports":
-            params={"keyword":query.strip(),"size":20,"sort":"date,asc"}
+            params={"keyword":query.strip(),"size":30,"sort":"date,asc"}
             if country:params["countryCode"]=country
             try:
                 payload=call_tm(key,params)
-                matches += [normalize_tm(e) for e in
-                    ((payload.get("_embedded") or {}).get("events") or [])[:20]]
+                events += [normalize_tm(e) for e in
+                    ((payload.get("_embedded") or {}).get("events") or [])[:30]]
                 sources.append("Ticketmaster")
             except HTTPException:
-                warnings.append("Ticketmaster search unavailable")
-        if kind!="sports" and not sport_query and not matches:
-            # Primary keyless worldwide tour dates provider. Do NOT query
-            # StungEvents on each successful Gigora search: it is optional
-            # and can currently time out or rate-limit unrelated requests.
-            gigora,info=ceyrl_gigora.search(query,country,kind)
-            matches.extend(gigora)
-            sources.extend(info.get("checked",[]))
-            warnings.extend(info.get("errors",[]))
-            if not gigora and not matches:
-                backup,info=ceyrl_music.search(query,country,kind)
-                matches.extend(backup)
-                sources.extend(info.get("checked",[]))
-                warnings.extend(info.get("errors",[]))
-        if kind!="sports" and not matches:
+                warnings.append("Ticketmaster connection failed; verify the server key, API quota or provider status.")
+        if kind!="sports" and not events:
             try:
-                matches += ceyrl_radar.search_public(query,country)
+                events += ceyrl_radar.search_public(query,country)
                 sources.append("Ticket Fairy")
             except HTTPException:
-                warnings.append("Ticket Fairy search unavailable")
+                warnings.append("Ticket Fairy is currently unavailable.")
         if sport_query:
             sports,info=ceyrl_sports.search(query,country,kind)
-            matches.extend(sports)
-            sources.extend(info.get("checked",[]))
-            warnings.extend(info.get("errors",[]))
+            events += sports
+            sources += info.get("checked",[])
+            warnings += info.get("errors",[])
         if not sources:
-            raise HTTPException(502,"No live event search provider is currently reachable. Open an official search link to check listings.")
-        items=ceyrl_music._distinct(
-            [item for item in matches if item.get("id") and item.get("name")]
+            raise HTTPException(502,"No usable event source responded. Check the hosting connection and provider credentials.")
+        unique={}
+        for item in events:
+            if item.get("id") and item.get("name"):
+                unique.setdefault(item["id"],item)
+        results=list(unique.values())[:40]
+        coverage=(
+            "Global Ticketmaster search is enabled on this server. Listings are from "
+            "third-party catalogs and do not guarantee ticket availability."
+            if key else
+            "Only limited public listings are currently searchable inside Ceyrl. "
+            "For major artists such as Calin, BTS or Noah Kahan, the site owner must "
+            "configure a shared CTW_TICKETMASTER_API_KEY on the server. "
+            "Individual users never need a key."
         )
-        checked=list(dict.fromkeys(sources))
-        return items[:40]," + ".join(checked),{
-            "sources_checked":checked,
+        return results," + ".join(dict.fromkeys(sources)),{
+            "sources_checked":list(dict.fromkeys(sources)),
             "provider_warnings":warnings,
             "partial_outage":bool(warnings),
-            "coverage_note":(
-                "Searches use independent live music and sports catalogs. "
-                "No result does not mean there is no concert. Dates are shown "
-                "only when sources publish them, and ticket availability is unverified."
-            )
+            "requires_server_key":not bool(key) and kind!="sports",
+            "coverage_note":coverage
         }
 
     @app.get("/api/x/shield")
@@ -241,10 +245,15 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                     os.getenv("TICKETMASTER_API_KEY","").strip())
         return {"connected":True,"key_required":False,"personal_key":personal,
                 "server_ticketmaster":shared,"watch_count":count,
-                "provider":"Gigora concerts + Ticket Fairy + sports schedules" +
-                           (" + Tickets.dev" if os.getenv("CTW_TICKETS_DEV_API_KEY","").strip() else "") +
-                           (" + Ticketmaster" if shared or personal else ""),
-                "coverage_note":"Search popular artists, concerts and sports without your own key. Catalog coverage varies; a server-side integration can expand results.",
+                "provider":("Ticketmaster + public events + sports schedules"
+                            if shared or personal else
+                            "Ticket Fairy public listings + sports schedules"),
+                "global_concerts_enabled":bool(shared or personal),
+                "coverage_note":("Global Ticketmaster Discovery search is configured; "
+                                 "you do not need your own key." if shared or personal else
+                                 "Public events only. For worldwide concert search, the "
+                                 "site operator needs one shared Ticketmaster Discovery API "
+                                 "key set in the hosting Environment; users need no key."),
                 "refresh_note":"Watchlist refreshes on demand. No background scheduler is active."}
 
     # Deprecated optional personal integration endpoints remain for existing users.
