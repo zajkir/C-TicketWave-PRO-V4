@@ -140,6 +140,8 @@
     const kind = document.getElementById('x-radar-kind')?.value || 'all';
     if (query.length < 2) return notify('Enter at least two characters to search.', true);
     xRadarQuery = query; xRadarCountry = country; xRadarKind = kind;
+    // Never display an old artist's results under a new failed search.
+    xRadarEvents = [];
     const serial = ++radarRequestSerial;
     const resultPanel = document.getElementById('x-radar-results');
     const submit = document.getElementById('studio-radar-submit');
