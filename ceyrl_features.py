@@ -284,10 +284,10 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
     @app.post("/api/x/radar/refresh")
     def radar_refresh(request:Request):
         user,path=user_db(request,True)
-        key=require_tm(user,path)
         with connection(path,True) as db:
             ensure_schema(db)
             watches=select(db,"SELECT id,query,country,last_checked FROM x_radar_watches ORDER BY id ASC LIMIT 15")
+        ceyrl_radar.rate_limit(auth_db,connection,user["id"],"refresh",units=max(1,len(watches)))
         fresh=0;updated=0;errors=[];skipped=0
         for watch in watches:
             try:
@@ -300,11 +300,9 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                             continue
                     except (TypeError,ValueError):
                         pass
-                params={"keyword":watch["query"],"size":15,"sort":"date,asc"}
-                if watch["country"]:params["countryCode"]=watch["country"]
-                result=call_tm(key,params)
-                matches=[normalize_tm(v) for v in ((result.get("_embedded") or {}).get("events") or [])[:15]]
+                matches,provider=discover_events(user,path,watch["query"],watch["country"])
                 with connection(path,True) as db:
+                    ceyrl_radar.remember(db,matches)
                     for x in matches:
                         if not x["id"]:continue
                         old=select(db,"""SELECT id,starts_at,venue FROM x_radar_hits
