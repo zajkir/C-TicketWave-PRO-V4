@@ -39,6 +39,10 @@ def test_experience_reuses_real_backends_and_adds_working_ui_controls(app_client
     assert "data-page" in code
     assert "aria-current" in code
     assert 'dataset.ceyrlPage' in code
+    assert 'ceyrl-calendar-level-' in code
+    assert 'ceyrl-profit-level-' in code
+    assert 'style="height:' not in code
+    assert 'style="width:' not in code
 
 
 def test_all_page_styles_reuse_existing_security_and_accessibility(app_clients):
