@@ -36,8 +36,7 @@ _ALLOWED_EVENT_HOSTS = (
     "ticketmaster.es","ticketmaster.it","ticketmaster.cz","ticketmaster.ca",
     "ticketmaster.com.au","axs.com","seatgeek.com","stubhub.com",
     "vividseats.com","viagogo.com","viagogo.co.uk",
-    "ticketweb.com","tickets.stung_events.invalid",
-    "stungevents.com"
+    "ticketweb.com","stungevents.com"
 )
 
 def _parse_datetime(text):
@@ -81,7 +80,8 @@ def _safe_link(url):
         if u.port not in (None,443):
             return ""
         host=u.hostname.lower()
-        if host in _ALLOWED_EVENT_HOSTS or host.endswith(".ticketmaster.com"):
+        if any(host==domain or host.endswith("."+domain)
+               for domain in _ALLOWED_EVENT_HOSTS):
             return url
     except ValueError:
         pass
