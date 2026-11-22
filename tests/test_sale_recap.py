@@ -87,10 +87,10 @@ def test_sale_recap_frontend_is_last_and_has_a11y_data_controls(app_clients):
     response=alice.get("/")
     assert response.status_code==200
     html=response.text
-    assert "/static/sale-recap.css?v=sale-1" in html
-    assert "/static/sale-recap.js?v=sale-1" in html
-    assert html.index("experience.js?v=experience-5")<html.index("sale-recap.js?v=sale-1")
-    assert html.index("experience.css?v=experience-5")<html.index("sale-recap.css?v=sale-1")
+    assert "/static/sale-recap.css?v=sale-2" in html
+    assert "/static/sale-recap.js?v=sale-2" in html
+    assert html.index("experience.js?v=experience-5")<html.index("sale-recap.js?v=sale-2")
+    assert html.index("experience.css?v=experience-5")<html.index("sale-recap.css?v=sale-2")
     js=alice.get("/static/sale-recap.js").text
     css=alice.get("/static/sale-recap.css").text
     for term in [
@@ -108,3 +108,32 @@ def test_sale_recap_frontend_is_last_and_has_a11y_data_controls(app_clients):
     assert "buyer_score" not in js
     assert "payout_processed" not in js
     assert "Verified buyer" not in js
+
+
+def test_sale_recap_visual_v2_layout_is_centered_and_full_screen(app_clients):
+    _,client,_,_=app_clients
+    css=client.get("/static/sale-recap.css").text
+    js=client.get("/static/sale-recap.js").text
+    # Old drawer used right-justification and 630px width. The new
+    # centered, multi-column layout must win in the final cascade.
+    assert ".ceyrl-sale-overlay{" in css
+    second=css.rfind(".ceyrl-sale-overlay{")
+    assert "justify-content:center!important" in css[second:second+350]
+    assert "width:min(1100px" in css
+    assert "width:min(1370px" in css
+    assert ".sale-recap-stage{" in css
+    assert "grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr)" in css
+    assert "sale-recap-summary-strip" in js
+    assert "sale-recap-artist-avatar" in js
+    assert "sale-recap-event-inner" in js
+    assert "Celá obrazovka" in js
+    assert "data-sale-mode=\"full\"" in js
+    assert "Marža" in js
+    assert ".sale-recap-event-shimmer" in css
+    assert "sale-event-glint" in css
+    assert "sale-profit-sheen" in css
+    assert "@media(max-width:800px)" in css
+    assert "@media(max-width:480px)" in css
+    assert "@media(prefers-reduced-motion:reduce)" in css
+    assert "body.motion-off" in css
+    assert "api('/sales/'+id)" in js
