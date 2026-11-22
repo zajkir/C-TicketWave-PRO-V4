@@ -77,7 +77,9 @@
     const settled = await Promise.allSettled([api('/x/radar/status'), api('/x/radar/watches')]);
     if (app.page !== 'radar') return;
     const status = settled[0].status === 'fulfilled' ? settled[0].value : {global_concerts_enabled:false,provider:'Source status unavailable',coverage_note:'Source status is currently unavailable.'};
-    const watchState = settled[1].status === 'fulfilled' ? settled[1].value : {watches:[],hits:[]};
+    const watchLoadFailed = settled[1].status !== 'fulfilled';
+    const statusLoadFailed = settled[0].status !== 'fulfilled';
+    const watchState = watchLoadFailed ? {watches:[],hits:[]} : settled[1].value;
     const watches = Array.isArray(watchState.watches) ? watchState.watches : [];
     const hits = Array.isArray(watchState.hits) ? watchState.hits : [];
     const configured = !!status.global_concerts_enabled;
@@ -88,7 +90,7 @@
       '<h2>Find the events worth going to.</h2>' +
       '<p>Artists, festivals, sports and venues in one focused workspace. Search is free to use; no personal API key needed.</p></div>' +
       '<span class="studio-radar-state"><i class="studio-status-dot ' + (configured ? 'ready' : '') + '"></i>' +
-      (configured ? 'Global concert source configured' : 'Limited public coverage') + '</span></section>' +
+      (statusLoadFailed ? 'Source status unavailable' : (configured ? 'Global concert source configured' : 'Limited public coverage')) + '</span></section>' +
       '<section class="studio-radar-search"><p class="studio-radar-searchlabel">What are you looking for?</p>' +
       '<form class="x-radar-form" id="x-radar-form">' +
       '<input id="x-radar-query" name="query" type="search" minlength="2" maxlength="80" required autocomplete="off"' +
@@ -116,13 +118,15 @@
         '<div class="studio-radar-empty"><strong>Start discovering events</strong>' +
         '<p>Search above or choose a popular artist. Dates and ticket offers are shown only when a source returns them.</p></div>') +
       '</div></div><aside class="studio-radar-side" aria-label="My radar activity">' +
-      xPane('Saved searches', 'Private to your account · up to 15', watches.length ?
+      xPane('Saved searches', 'Private to your account · up to 15', watchLoadFailed ?
+        '<p class="x-description" role="alert">Saved searches could not be loaded. Open Event Radar again to retry.</p>' : watches.length ?
         watches.map(w => '<div class="x-watch-row"><div><b>' + branchSafe(w.query) + '</b><small>' +
           branchSafe(w.country || 'Worldwide') + ' · Last checked: ' +
           branchSafe(w.last_checked ? niceDate(w.last_checked) : 'Not yet') + '</small></div>' +
           '<button type="button" class="mini-btn" data-x-remove-watch="' + Number(w.id) + '">Remove</button></div>').join('') :
         '<p class="x-description">No saved searches yet. Search for an artist or event, then save it.</p>') +
-      xPane('Latest updates', 'Changes detected when you refresh', hits.length ?
+      xPane('Latest updates', 'Changes detected when you refresh', watchLoadFailed ?
+        '<p class="x-description">Updates are unavailable until saved searches load.</p>' : hits.length ?
         hits.slice(0,10).map(h => '<div class="x-watch-row"><div><b>' + branchSafe(h.name) +
           '</b><small>' + branchSafe(h.city || 'Location unknown') + ' · ' +
           branchSafe(h.starts_at || 'Date unconfirmed') + '</small></div></div>').join('') :
