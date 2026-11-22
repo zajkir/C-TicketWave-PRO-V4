@@ -119,29 +119,68 @@
   function renderSheet(){
     if(!overlay||!detail)return;
     const d=detail;
+    const eventName=String(d.event_title||'Zaznamenaný predaj');
+    const initial=eventName.trim().slice(0,1).toLocaleUpperCase('sk')||'C';
+    const location=[d.event_venue,d.event_city,d.event_country].filter(Boolean).join(' · ')||'Miesto neuvedené';
+    const marginKnown=d.sale_margin_cents!==null;
+    const marginState=!marginKnown?'Nevypočítaná marža':d.sale_margin_cents<0?'Záporná marža':'Kladná marža';
+    const className=!marginKnown?'sale-unknown':d.sale_margin_cents<0?'sale-negative':'sale-positive';
+    const label='Sale Recap · '+eventName+', predaj '+d.id;
     overlay.className='ceyrl-sale-overlay ceyrl-sale-mode-'+mode;
-    const label='Sale Recap · '+(d.event_title||'Predaj')+', predaj '+d.id;
     overlay.innerHTML=backdrop()+
       '<div class="ceyrl-sale-shade" data-sale-close></div>'+
       '<section class="sale-recap-sheet" role="dialog" aria-modal="true" aria-label="'+safe(label)+'" tabindex="-1">'+
-      '<header class="sale-recap-header"><div><span class="sale-recap-brand">Ceyrl</span>'+
-      '<span class="sale-recap-header-divide">/</span><span>'+ (mode==='full'?'REKAPITULÁCIA':'RÝCHLY DETAIL')+'</span>'+
-      '</div><div class="sale-recap-header-actions">'+
-      (mode==='full'?'<button type="button" data-sale-mode="quick" class="sale-recap-small">Zmenšiť</button>':'')+
+      '<header class="sale-recap-header"><div class="sale-recap-logo-line"><span class="sale-recap-symbol">C</span>'+
+      '<span class="sale-recap-brand">Ceyrl</span><span class="sale-recap-header-divide">/</span>'+
+      '<span class="sale-recap-header-context">'+(mode==='full'?'SALE RECAP STUDIO':'RÝCHLA REKAPITULÁCIA')+'</span></div>'+
+      '<div class="sale-recap-header-actions"><span class="sale-recap-private-tag">✧ Súkromný prehľad</span>'+
+      (mode==='full'?'<button type="button" data-sale-mode="quick" class="sale-recap-small">Zmenšiť</button>':'<button type="button" data-sale-mode="full" class="sale-recap-small">↗ Celá obrazovka</button>')+
       '<button type="button" data-sale-close class="sale-recap-close" aria-label="Zavrieť detail predaja">×</button>'+
       '</div></header>'+
       '<div class="sale-recap-scroll">'+
-      '<div class="sale-recap-event"><div class="sale-recap-art" aria-hidden="true"><span>♫</span></div>'+
-      '<div><span class="sale-recap-eyebrow">PREDAJ #'+Number(d.id)+'</span>'+
-      '<h2>'+saleTitle(d)+'</h2>'+
-      '<p>'+safe([d.event_venue,d.event_city,d.event_country].filter(Boolean).join(' · ')||'Miesto neuvedené')+'</p>'+
-      '<p>'+safe(shortDate(d.event_starts_at))+' · Predaj '+safe(shortDate(d.sold_at))+'</p></div></div>'+
-      '<section class="sale-recap-profit"><div class="sale-recap-profit-label">MARŽA KONKRÉTNEHO PREDAJA</div>'+
-      '<strong class="'+(d.sale_margin_cents===null?'sale-unknown':d.sale_margin_cents<0?'sale-negative':'sale-positive')+'" '+
-      (d.sale_margin_cents!==null?'data-sale-animate="'+Number(d.sale_margin_cents)+'" data-currency="'+safe(d.currency)+'"':'')+
-      '>'+safe(profitString(d))+'</strong>'+
-      '<span>'+(d.sale_roi_percent===null?'ROI nedostupné':
-        'ROI '+safe(roiString(d)))+'</span></section>'+
+      '<div class="sale-recap-stage">'+
+        '<section class="sale-recap-event" aria-label="Podujatie">'+
+          '<div class="sale-recap-event-shimmer" aria-hidden="true"></div>'+
+          '<div class="sale-recap-event-inner">'+
+            '<div class="sale-recap-overline"><span>CEYRL / PERSONAL RECAP</span><span>NO. '+Number(d.id)+'</span></div>'+
+            '<div class="sale-recap-event-heading">'+
+              '<div class="sale-recap-artist-avatar" aria-hidden="true">'+safe(initial)+'</div>'+
+              '<div><div class="sale-recap-eyebrow">EVENT · SALES SUMMARY</div>'+
+                '<h2>'+saleTitle(d)+'</h2>'+
+              '</div>'+
+            '</div>'+
+            '<div class="sale-recap-event-facts">'+
+              '<div><span aria-hidden="true">⌖</span><span>'+safe(location)+'</span></div>'+
+              '<div><span aria-hidden="true">▤</span><span>'+safe(shortDate(d.event_starts_at))+'</span></div>'+
+              '<div><span aria-hidden="true">↗</span><span>Predaj '+safe(shortDate(d.sold_at))+'</span></div>'+
+            '</div>'+
+            '<div class="sale-recap-event-bottom"><span>ADMIT ONE · CEYRL</span>'+
+             '<span>'+safe(qty(d.quantity))+' '+(Number(d.quantity)===1?'VSTUPENKA':'VSTUPENKY')+'</span></div>'+
+          '</div>'+
+        '</section>'+
+        '<section class="sale-recap-profit" aria-label="Marža predaja">'+
+          '<div class="sale-recap-profit-top"><span>FINANCIAL PERFORMANCE</span>'+
+            '<span class="sale-recap-profit-indicator">'+safe(marginState)+'</span></div>'+
+          '<div class="sale-recap-profit-main"><div class="sale-recap-profit-label">MARŽA KONKRÉTNEHO PREDAJA</div>'+
+            '<strong class="'+className+'" '+
+              (marginKnown?'data-sale-animate="'+Number(d.sale_margin_cents)+'" data-currency="'+safe(d.currency)+'"':'')+
+            '>'+safe(profitString(d))+'</strong>'+
+            '<span class="sale-recap-roi">'+(d.sale_roi_percent===null?'ROI nie je dostupné':
+              'ROI '+safe(roiString(d)))+'</span>'+
+            '<div class="sale-recap-profit-caption">Tržba − poplatky − nákup predaných vstupeniek</div>'+
+          '</div>'+
+          '<div class="sale-recap-profit-bottom"><span>Výpočet vychádza z evidovaných údajov</span>'+
+             '<span>SALE #'+Number(d.id)+'</span></div>'+
+        '</section>'+
+      '</div>'+
+      '<section class="sale-recap-summary-strip" aria-label="Základné údaje o predaji">'+
+        '<div><span>TRŽBA</span><strong>'+safe(format(d.revenue_cents,d.currency))+'</strong></div>'+
+        '<div><span>NAKÚPENÉ VSTUPENKY</span><strong>'+safe(valueOr(d.sold_purchase_cost_cents,d.currency))+'</strong></div>'+
+        '<div><span>PREDANÝCH KUSOV</span><strong>'+safe(qty(d.quantity))+'</strong></div>'+
+        '<div><span>ROI PREDAJA</span><strong class="'+className+'">'+safe(roiString(d))+'</strong></div>'+
+      '</section>'+
+      '<div class="sale-recap-section-heading"><div><span>DETAIL TRANSAKCIE</span><h3>Všetko o tomto predaji</h3></div>'+
+        '<span class="sale-recap-section-code">CR–'+String(d.id).padStart(5,'0')+'</span></div>'+
       tabs()+
       '<div id="sale-recap-active-panel" role="tabpanel">'+panels(d)+'</div>'+
       '<div class="sale-recap-controls">'+
@@ -149,13 +188,15 @@
         '<button type="button" class="btn outline" data-sale-show-event>Zobraziť moje udalosti ↗</button>')+
       '<button type="button" class="btn outline" data-sale-copy>Kopírovať súhrn</button>'+
       (mode==='full'?'<button type="button" class="btn outline" data-sale-print>Tlačiť / Uložiť PDF</button>':'')+
-      '</div><footer class="sale-recap-footer"><span>SÚKROMNÉ ÚDAJE · CEYRL</span>'+
+      '</div>'+
+      '<div class="sale-recap-perforation" aria-hidden="true"><span></span><span></span></div>'+
+      '<footer class="sale-recap-footer"><span>✧ CEYRL · PRIVATE SALE ARCHIVE</span>'+
       '<span>Záznam predaja • '+safe(date(d.created_at))+'</span></footer>'+
       '</div></section>';
     overlay.querySelector('.sale-recap-close')?.focus({preventScroll:true});
     animateNumber();
   }
-  function animateNumber(){
+    function animateNumber(){
     if(!overlay||reduced())return;
     const el=overlay.querySelector('[data-sale-animate]');
     if(!el)return;
@@ -293,6 +334,18 @@
   document.addEventListener('keydown',e=>{
     if(!overlay)return;
     if(e.key==='Escape'){e.preventDefault();close();return;}
+    if(e.target?.matches?.('[data-sale-tab]') && ['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){
+      const items=[...overlay.querySelectorAll('[data-sale-tab]')];
+      const index=items.indexOf(e.target);
+      if(index>=0){
+        e.preventDefault();
+        let next=e.key==='Home'?0:e.key==='End'?items.length-1:
+          (index+(e.key==='ArrowRight'?1:-1)+items.length)%items.length;
+        items[next].click();
+        overlay.querySelectorAll('[data-sale-tab]')[next]?.focus();
+        return;
+      }
+    }
     if(e.key!=='Tab')return;
     const focusable=[...overlay.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),[tabindex="0"]')]
       .filter(x=>x.getClientRects().length);
