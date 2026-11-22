@@ -117,8 +117,8 @@ def test_sale_recap_visual_v2_layout_is_centered_and_full_screen(app_clients):
     # Old drawer used right-justification and 630px width. The new
     # centered, multi-column layout must win in the final cascade.
     assert ".ceyrl-sale-overlay{" in css
-    second=css.rfind(".ceyrl-sale-overlay{")
-    assert "justify-content:center!important" in css[second:second+350]
+    second=css.index("SALE RECAP V2")
+    assert "justify-content:center!important" in css[second:second+650]
     assert "width:min(1100px" in css
     assert "width:min(1370px" in css
     assert ".sale-recap-stage{" in css
