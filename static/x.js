@@ -7,6 +7,7 @@ let xRadarSource='Ticket Fairy public events';
 let xRadarCoverage='';
 let xRadarQuery='';
 let xRadarCountry='';
+let xRadarKind='all';
 
 const xEsc=(v)=>escapeHtml(v==null?'':v);
 const xTag=(text,type='neutral')=>'<span class="x-tag x-tag-'+type+'">'+xEsc(text)+'</span>';
@@ -260,7 +261,11 @@ async function renderXRadar(){
     '<span>'+xEsc(status.provider)+'</span></div>'+
     '<p class="x-description x-radar-coverage">'+xEsc(status.coverage_note||'Only events listed by the source are available.')+'</p>'+
     '<form class="x-radar-form" id="x-radar-form"><input name="query" id="x-radar-query" minlength="2" maxlength="80" required '+
-    'placeholder="Artist or event name…" value="'+xEsc(xRadarQuery)+'">'+
+    'placeholder="Artist, club, competition or event…" value="'+xEsc(xRadarQuery)+'">'+
+    '<select name="kind" id="x-radar-kind" aria-label="Event category">'+
+    [['all','All events'],['music','Concerts & festivals'],['sports','Sports & football']]
+      .map(([c,n])=>'<option value="'+c+'" '+(xRadarKind===c?'selected':'')+'>'+n+'</option>').join('')+
+    '</select>'+
     '<select name="country" id="x-radar-country">'+
     [['','All countries'],['SK','Slovakia'],['CZ','Czechia'],['DE','Germany'],['AT','Austria'],['PL','Poland'],
      ['GB','United Kingdom'],['US','USA'],['FR','France'],['IT','Italy'],['ES','Spain'],['NL','Netherlands']]
@@ -299,19 +304,37 @@ function xRadarResultsHtml(rows){
 async function xRadarSearch(){
   const query=$('#x-radar-query')?.value.trim()||'';
   const country=$('#x-radar-country')?.value||'';
+  const kind=$('#x-radar-kind')?.value||'all';
   if(query.length<2)return;
-  xRadarQuery=query;xRadarCountry=country;
+  xRadarQuery=query;xRadarCountry=country;xRadarKind=kind;
   $('#x-radar-results').innerHTML='<div class="x-loading">Searching public event listings…</div>';
   try{
-    const data=await api('/x/radar/search?q='+encodeURIComponent(query)+'&country='+encodeURIComponent(country));
+    const data=await api('/x/radar/search?q='+encodeURIComponent(query)+'&country='+encodeURIComponent(country)+'&kind='+encodeURIComponent(kind));
     xRadarEvents=data.events||[];
     xRadarSource=data.source||'Public events';
     xRadarCoverage=data.coverage_note||'';
-    if(app.page==='radar')$('#x-radar-results').innerHTML=
-      '<p class="x-description x-radar-search-source">Source: '+xEsc(xRadarSource)+
-      '. '+xEsc(xRadarCoverage)+'</p>'+
-      (xRadarEvents.length?xRadarResultsHtml(xRadarEvents):
-      '<div class="x-empty">No matching events in this catalog. Try another artist or country.</div>');
+    if(app.page==='radar'){
+      const sources=(data.sources_checked||[]).join(' + ');
+      const warnings=data.provider_warnings||[];
+      const safeQuery=encodeURIComponent(query);
+      const external='<div class="x-radar-external"><strong>Continue in official sources</strong>'+
+        '<p>These links open live search pages; they are not confirmed Ceyrl event results.</p>'+
+        '<a target="_blank" rel="noopener noreferrer" href="https://www.ticketmaster.com/search?q='+safeQuery+
+        '">Search Ticketmaster ↗</a>'+
+        (/nations?\s*league|liga\s*n[áa]rodov/i.test(query)?
+          '<a target="_blank" rel="noopener noreferrer" href="https://www.uefa.com/uefanationsleague/fixtures-results/">'+
+          'UEFA Nations League official fixtures ↗</a>':'')+
+        '</div>';
+      $('#x-radar-results').innerHTML=
+        '<p class="x-description x-radar-search-source">Checked: '+xEsc(sources||xRadarSource)+
+        '. '+xEsc(xRadarCoverage)+'</p>'+
+        (warnings.length?'<div class="x-api-error">Some sources did not respond: '+
+          xEsc(warnings.join('; '))+'. Results may be incomplete.</div>':'')+
+        (xRadarEvents.length?xRadarResultsHtml(xRadarEvents):
+          '<div class="x-empty">No matching events were found in the available catalogs. '+
+          'This does not mean the event does not exist.</div>')+
+        external;
+    }
   }catch(error){
     $('#x-radar-results').innerHTML='<div class="x-api-error">'+xEsc(error.message)+'</div>';
   }
@@ -326,7 +349,7 @@ function initXPages(){
       if(btn.dataset.xGoto)return navigate(btn.dataset.xGoto);
       if(btn.dataset.xDelivery)return xEditDelivery(Number(btn.dataset.xDelivery));
       if(btn.dataset.xImport){
-        if(!confirm('Import this Ticketmaster event into your personal Ceyrl calendar?'))return;
+        if(!confirm('Import this event listing into your private Ceyrl calendar? Verify the date and source first.'))return;
         const done=await api('/x/radar/import/'+encodeURIComponent(btn.dataset.xImport),{method:'POST'});
         notify(done.already_exists?'Event already in your calendar.':'Event imported into your private calendar.');
         return navigate('events');
