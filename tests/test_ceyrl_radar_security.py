@@ -4,17 +4,6 @@ import sqlite3
 from datetime import datetime, timezone, timedelta
 
 import ceyrl_radar
-import ceyrl_music
-import ceyrl_gigora
-import pytest
-
-@pytest.fixture(autouse=True)
-def mock_extra_gigora(monkeypatch):
-    # Keyless original public source tests should never hit real networks.
-    monkeypatch.setattr(ceyrl_gigora,"search",lambda *args,**kwargs:
-        ([],{"checked":[],"errors":[]}))
-    monkeypatch.setattr(ceyrl_music,"search",lambda *args,**kwargs:
-        ([],{"checked":[],"errors":[]}))
 from test_v5 import app_clients, signup
 
 
@@ -35,8 +24,6 @@ def test_keyless_radar_search_is_scoped_and_imports_only_sourced_results(app_cli
         hits.append((query,country))
         return [ceyrl_radar.normalize_public_event(PUBLIC_EVENT)]
     monkeypatch.setattr(ceyrl_radar,"request_public",fake_public)
-    monkeypatch.setattr(ceyrl_music,"search",lambda q,c,k:
-        ([],{"checked":[],"errors":[],"status":"unavailable"}))
 
     anon=alice.get("/api/x/radar/status")
     assert anon.status_code==200
