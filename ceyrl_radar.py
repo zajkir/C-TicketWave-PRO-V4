@@ -144,7 +144,14 @@ def _valid_provider_url(url):
     parts=urlsplit(url)
     if parts.scheme!="https" or parts.username or parts.password:
         return False
-    if parts.port not in (None,443) or parts.query or parts.fragment:
+    if parts.port not in (None,443) or parts.fragment:
+        return False
+    # Gigora's documented page URLs include a harmless utm_source=ai query.
+    # Validate its limited parameters before applying the strict no-query rule
+    # to the other third-party sources.
+    if parts.hostname in ("gigora.live","www.gigora.live"):
+        return bool(ceyrl_gigora._hosted_url(url))
+    if parts.query:
         return False
     if parts.hostname=="www.thesportsdb.com":
         return bool(re.fullmatch(r"/event/\d{1,12}",parts.path))
