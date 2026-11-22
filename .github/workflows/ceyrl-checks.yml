@@ -29,7 +29,6 @@ jobs:
           node --check static/app.js
           node --check static/v6.js
           node --check static/x.js
-          node --check static/inbox.js
       - name: Compile backend modules
         run: |
           python -m py_compile app.py
@@ -37,4 +36,3 @@ jobs:
           python -m py_compile ceyrl_shield.py
           python -m py_compile ceyrl_features.py
           python -m py_compile ceyrl_ai.py
-          python -m py_compile ceyrl_inbox.py
