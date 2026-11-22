@@ -30,6 +30,9 @@ jobs:
           node --check static/v6.js
           node --check static/x.js
           node --check static/studio.js
+          node --check static/studio-dashboard.js
+          node --check static/aurora.js
+          node --check static/experience.js
       - name: Compile backend modules
         run: |
           python -m py_compile app.py
