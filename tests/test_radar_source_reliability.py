@@ -42,7 +42,7 @@ def test_keyless_mode_explicitly_limits_catalog_for_calins_concert(app_clients,m
     assert data["events"]==[]
     assert data["requires_server_key"] is True
     assert data["sources_checked"]==["Ticket Fairy"]
-    assert "Ticketmaster" in data["coverage_note"]
+    assert "CTW_TICKETMASTER_API_KEY" in data["coverage_note"]
     assert checked==[("Calin","")]
 
 
