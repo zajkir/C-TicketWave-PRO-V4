@@ -1,0 +1,468 @@
+/* Ceyrl Aurora v4 — full-site visual redesign derived from the selected reference.
+   Presentation only: no account or provider states are simulated. */
+:root{
+  color-scheme:dark;
+  --bg:#080518;--canvas:#0d0920;--panel:#17112d;--panel2:#211838;--panel3:#2b2046;
+  --line:#4a346d;--line2:#64478b;--text:#faf7ff;--muted:#c2b5d5;--muted2:#9887b0;
+  --blue:#b58bff;--violet:#a668ff;--teal:#4ae8d0;--yellow:#f5cb88;--red:#ff8ca9;
+  --shadow:0 18px 48px rgba(0,0,0,.28);--studio-radius:18px;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+html{background:#080518}
+body{
+  color:#f7f4ff!important;background:#080518!important;font-size:14px;
+  background-image:radial-gradient(ellipse at 78% 4%,rgba(101,39,181,.22),transparent 35%),
+    radial-gradient(ellipse at 0% 94%,rgba(23,186,190,.09),transparent 38%)!important;
+}
+body:before{background:radial-gradient(circle at 70% -5%,rgba(116,56,219,.21),transparent 46%)!important}
+::selection{color:#fff;background:#7650aa}
+:where(button,a,input,select,textarea):focus-visible{outline:2px solid #50e7d1!important;outline-offset:3px!important}
+body:not(.auth-active) .workspace{
+  background:#080518!important;min-height:100vh;
+}
+body:not(.auth-active) .workspace-main{
+  background:linear-gradient(150deg,#100b2d 0%,#0b091d 50%,#0d0a22 100%)!important;
+  position:relative;isolation:isolate;min-width:0
+}
+body:not(.auth-active) .workspace-main:before{
+  content:"";position:absolute;inset:66px 0 auto;height:620px;pointer-events:none;z-index:-1;
+  background:radial-gradient(ellipse at 42% 0%,rgba(140,50,219,.11),transparent 50%),
+    radial-gradient(ellipse at 100% 25%,rgba(28,224,205,.06),transparent 36%);
+}
+body:not(.auth-active) .workspace .sidebar{
+  background:linear-gradient(168deg,#21103e 0%,#151029 48%,#110b28 100%)!important;
+  border-right:1px solid rgba(160,100,236,.2)!important;
+  box-shadow:inset -1px 0 rgba(121,73,183,.1),8px 0 40px rgba(6,1,21,.2);
+  width:242px;flex-basis:242px;position:relative;
+}
+body:not(.auth-active) .workspace .sidebar:before{
+  content:"";position:absolute;left:-90px;bottom:100px;width:300px;height:275px;
+  background:radial-gradient(ellipse,rgba(154,66,249,.18),transparent 67%);
+  pointer-events:none
+}
+body:not(.auth-active) .sidebar-logo{
+  height:76px!important;padding:15px 17px!important;border-color:#4a2d68!important
+}
+body:not(.auth-active) .sidebar-logo img{
+  width:40px;height:40px;border-radius:11px;
+  filter:hue-rotate(45deg) saturate(1.6) drop-shadow(0 0 9px rgba(172,75,251,.42));
+}
+body:not(.auth-active) .sidebar-logo strong{color:#fff;font-size:21px!important;letter-spacing:-.7px}
+body:not(.auth-active) .sidebar-logo small{color:#a99bcb!important;letter-spacing:1.05px}
+body:not(.auth-active) .workspace-current{
+  background:rgba(119,72,177,.12)!important;border:1px solid rgba(177,117,232,.25)!important;
+  box-shadow:0 7px 25px rgba(12,4,30,.14)!important;color:#f8f1ff;
+}
+body:not(.auth-active) .workspace-initial{
+  background:linear-gradient(145deg,#ab61ef,#6553b7)!important;border-color:#a476f0!important;
+}
+body:not(.auth-active) .nav-group{
+  color:#a18bbc!important;letter-spacing:1.5px;font-size:10px;font-weight:750;
+}
+body:not(.auth-active) .workspace .nav-item{
+  color:#d7cae8!important;background:transparent!important;margin:3px 10px!important;
+  min-height:43px;border-radius:11px!important;
+  font-size:12px!important;font-weight:580;transition:background .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+body:not(.auth-active) .workspace .nav-item .nav-icon{color:#c4a0ff!important;min-width:18px;font-size:16px}
+body:not(.auth-active) .workspace .nav-item:hover{
+  color:#fff!important;background:rgba(157,76,239,.15)!important;transform:translateX(2px)
+}
+body:not(.auth-active) .workspace .nav-item.active{
+  color:#fff!important;
+  background:linear-gradient(100deg,rgba(146,59,233,.55),rgba(108,49,193,.3))!important;
+  border:1px solid rgba(181,99,255,.6)!important;
+  box-shadow:inset 3px 0 #d39dff,0 0 17px rgba(152,67,239,.18)!important;
+}
+body:not(.auth-active) .sidebar-end{border-color:#43305c!important}
+body:not(.auth-active) .sidebar-security{
+  background:linear-gradient(135deg,rgba(130,61,210,.17),rgba(20,79,86,.13))!important;
+  border:1px solid rgba(163,101,220,.36)!important;border-radius:14px!important
+}
+body:not(.auth-active) .sidebar-security span{color:#f0c47f!important}
+body:not(.auth-active) .sidebar-security strong{color:#f5ecff}
+body:not(.auth-active) .sidebar-security small{color:#ab9ec5}
+body:not(.auth-active) .sidebar-user{
+  background:rgba(108,51,172,.16)!important;border:1px solid rgba(162,89,218,.35)!important;
+}
+body:not(.auth-active) .workspace .topbar{
+  height:67px!important;
+  background:rgba(12,7,29,.92)!important;
+  border-bottom:1px solid rgba(165,102,240,.22)!important;
+  box-shadow:0 1px 20px rgba(107,31,218,.08)!important;
+  backdrop-filter:blur(18px);
+}
+body:not(.auth-active) .breadcrumb{color:#9986b7!important}
+body:not(.auth-active) .breadcrumb strong{color:#f5eaff!important}
+body:not(.auth-active) .global-search{
+  background:rgba(91,51,143,.2)!important;border:1px solid rgba(178,113,255,.36)!important;
+  box-shadow:inset 0 1px rgba(252,230,255,.04);border-radius:14px!important;
+}
+body:not(.auth-active) .global-search input{color:#eee6ff!important}
+body:not(.auth-active) .global-search kbd{background:#34204e!important;border-color:#6b4d8d!important;color:#bba1d9!important}
+body:not(.auth-active) .topbar-right>button{
+  border-radius:12px;border-color:rgba(174,114,248,.26);transition:all .2s
+}
+body:not(.auth-active) .topbar-right>button:hover{box-shadow:0 0 15px rgba(134,61,246,.2)}
+body:not(.auth-active) .motion-toggle{
+  background:rgba(92,45,150,.23)!important;color:#dfcefa!important;border-color:#573474!important
+}
+body:not(.auth-active) .private-pill{
+  background:rgba(24,115,102,.16)!important;border-color:rgba(76,234,204,.3)!important;color:#80edd3!important
+}
+body:not(.auth-active) .top-avatar{
+  background:linear-gradient(145deg,#a551ef,#5a4199)!important;color:#fff!important
+}
+body:not(.auth-active) .page-content{max-width:1760px;padding:29px clamp(18px,2.35vw,45px) 64px!important}
+.site-footer{border-color:rgba(155,95,222,.16)!important;color:#776e94!important}
+.page-heading h1{color:#faf6ff!important;font-size:clamp(29px,2.8vw,39px);letter-spacing:-1.25px;font-weight:770}
+.page-heading p{color:#aa9dbb!important}
+.page-heading .eyebrow,.eyebrow{color:#b692e1!important;letter-spacing:1.65px}
+.page-heading{margin-bottom:23px}
+.panel,.event-card,.kpi,.x-panel,.x-feature-card,.x-delivery-card,
+.x-event-result,.x-chat-wrap,.studio-settings-panel,.studio3-panel,
+.v6-metric,.modal-window{
+  background:linear-gradient(145deg,rgba(38,25,70,.92),rgba(23,17,49,.98))!important;
+  border:1px solid rgba(138,88,192,.37)!important;
+  box-shadow:0 11px 35px rgba(3,2,17,.16),inset 0 1px rgba(255,255,255,.025)!important;
+  border-radius:17px!important;
+}
+.panel h2,.x-panel h3,.studio-settings-panel h3,.studio3-panel h2{color:#faf6ff!important}
+.panel-head,.x-panel-header,.secure-row{border-color:rgba(144,99,199,.28)!important}
+.panel-head p,.x-description,.studio-settings-panel>p{color:#aaa0bd!important}
+.kpi,.v6-metric,.studio3-stat{
+  background:linear-gradient(138deg,rgba(54,35,87,.94),rgba(23,18,47,.96))!important;
+  border:1px solid rgba(141,88,204,.4)!important;
+}
+.kpi-value,.v6-metric strong{color:#f6efff!important}
+.kpi-value.positive,.positive,.studio3-stat.studio3-green strong{color:#79f2ce!important}
+.kpi-value.negative,.negative,.studio3-stat.studio3-red strong{color:#ff96b9!important}
+.kpi-symbol{color:#ad78fd!important}
+.stats-strip,.stat-chip,.section-note{
+  background:rgba(70,45,115,.36)!important;border-color:#5f427f!important;color:#d5c9e8!important;
+}
+.data-table thead{background:#291e45!important}
+.data-table tbody tr:hover td{background:#392453!important}
+.data-table th{color:#c9aff4!important;border-color:#5b3f77!important}
+.data-table td{border-color:#49345f!important;color:#e8dff4!important}
+.table-strong,.secure-row strong{color:#f6f2ff!important}
+.table-sub,.secure-row small{color:#a79cbe!important}
+.table-wrap{border-radius:13px}
+.btn,.mini-btn,.panel-link,.filter-input,.filter-select{
+  transition:background .18s,border-color .18s,box-shadow .18s,transform .18s;
+}
+.btn.primary,.studio3-btn.studio3-light{
+  background:linear-gradient(105deg,#5ff1e3,#52e4ca 75%,#b173fa)!important;
+  color:#0b1330!important;border:1px solid #60e8e0!important;
+  box-shadow:0 4px 20px rgba(51,228,204,.15)!important;font-weight:760!important;
+}
+.btn.primary:hover:not(:disabled),.studio3-btn.studio3-light:hover{
+  background:linear-gradient(105deg,#a4fff1,#73eddd 78%,#c39aff)!important;
+  box-shadow:0 6px 28px rgba(49,238,208,.3)!important;transform:translateY(-1px)
+}
+.btn.outline,.btn.subtle,.mini-btn,.studio3-btn.studio3-quiet,.panel-link{
+  color:#e8d8ff!important;background:rgba(93,57,144,.33)!important;
+  border:1px solid rgba(168,115,228,.46)!important;border-radius:11px!important;
+}
+.btn.outline:hover,.btn.subtle:hover,.mini-btn:hover,.studio3-btn.studio3-quiet:hover{
+  background:rgba(130,74,200,.45)!important;border-color:#aa7af4!important;
+}
+.field input,.field select,.field textarea,.filter-input,.filter-select,
+.x-radar-form input,.x-radar-form select,.studio-radar-search input,
+.studio-radar-search select,input[type=date],.modal-window input,.modal-window select{
+  background:#24193d!important;color:#f4efff!important;border:1px solid #614681!important;border-radius:11px!important;
+}
+input::placeholder,textarea::placeholder{color:#9b88b2!important}
+input:focus,select:focus,textarea:focus{border-color:#bd80ff!important;box-shadow:0 0 0 3px rgba(184,107,255,.18)!important}
+.tag,.x-tag{background:rgba(112,67,166,.26)!important;border:1px solid rgba(150,90,217,.4)!important;color:#dfc6ff!important}
+.tag.green{background:rgba(38,163,137,.18)!important;border-color:rgba(71,224,190,.25)!important;color:#87f3d2!important}
+.modal-backdrop{background:rgba(4,2,17,.82)!important;backdrop-filter:blur(11px)!important}
+.modal-window{background:#18102e!important;border-color:#8853b8!important}
+.modal-head{border-color:#4d3168!important}
+.auth-layout{background:#09061e!important}
+.auth-aside{
+  background:linear-gradient(108deg,rgba(21,9,46,.91),rgba(35,10,67,.77)),
+   url('/static/concert-aurora.svg') center/cover no-repeat!important;
+  border-color:#69368e!important;
+}
+.auth-main{background:linear-gradient(145deg,#0e0a24,#170c30)!important}
+.auth-card{border:1px solid #553876!important;background:rgba(26,17,51,.72)!important;box-shadow:0 23px 60px #07031e70!important}
+.auth-preview{background:rgba(41,26,76,.78)!important;border-color:#8856b9!important}
+.auth-card input{background:#291a48!important;border-color:#67458d!important}
+.auth-intro h1 em{background:linear-gradient(98deg,#e5b5ff,#54f0da)!important;-webkit-background-clip:text!important;background-clip:text!important}
+.auth-badge{color:#eacbff!important}
+.auth-note{color:#89ffdb!important}
+.empty-state,.studio-radar-empty,.x-empty,.v6-empty-next,.chart-message{
+  background:rgba(46,29,81,.39)!important;border-color:#624283!important;color:#b8a8d3!important;
+}
+.empty-state strong,.studio-radar-empty strong{color:#f8f3ff!important}
+.x-api-error,.v6-api-error{background:rgba(120,29,85,.22)!important;border-color:#ab5877!important;color:#ffd2e5!important}
+.x-hero{
+  background:linear-gradient(102deg,#38215d,#171338),url('/static/concert-aurora.svg') center/cover no-repeat!important;
+  border-color:#7953ad!important
+}
+.x-radar-artists,.x-radar-artist-chip,.x-radar-external{border-color:#6b4689!important}
+.x-radar-artist-chip{background:#33234f!important;color:#e3d0fb!important}
+.x-radar-artist-chip:hover{background:#603995!important;border-color:#c382ff!important}
+.x-result-actions a,.studio-radar-links a{color:#85f5e0!important}
+.x-chat-wrap,.x-feature-card,.x-delivery-card{overflow:hidden}
+.studio-account-header{
+  background:linear-gradient(105deg,rgba(50,24,92,.82),rgba(22,25,61,.76)),url('/static/concert-aurora.svg') right/cover no-repeat!important;
+  border:1px solid #8253b0!important;min-height:180px!important;
+}
+.studio-avatar{background:linear-gradient(140deg,#a945f3,#4ecbbd)!important;border-radius:21px!important;
+  box-shadow:0 0 27px rgba(171,71,248,.28)!important}
+.studio-setting-status{color:#8af3d2!important;background:rgba(14,115,99,.28)!important;border-color:#337e70!important}
+.studio-setting-status.neutral{color:#d7bbf0!important;background:#3a2857!important;border-color:#72499b!important}
+.studio-toggle{background:#382455!important;border-color:#8153a8!important}
+.studio-toggle[aria-pressed=true]{background:linear-gradient(100deg,#8b4cdc,#57beb4)!important;color:#fff!important}
+.studio-account-label{color:#b69de8!important}
+.studio3-hero-primary{
+  background:linear-gradient(93deg,rgba(32,13,64,.98) 4%,rgba(40,17,78,.8) 47%,rgba(7,28,51,.12) 100%),
+    url('/static/concert-aurora.svg') right center/cover no-repeat!important;
+  border:1px solid #8154b3!important;box-shadow:0 16px 47px rgba(88,24,171,.16)!important;
+}
+.studio3-hero-copy h2 em{color:#dba8ff!important}
+.studio3-hero-brand,.studio3-kicker{color:#c397fa!important}
+.studio3-next-card{
+  background:linear-gradient(138deg,rgba(54,25,90,.96),rgba(22,25,59,.9))!important;
+  border-color:#61498e!important
+}
+.studio3-next-top>span:last-child{color:#ad7eed!important}
+.studio3-next-date{color:#6ef1d9!important}
+.studio3-stat{box-shadow:0 9px 30px rgba(40,9,91,.14)!important}
+.studio3-stat-icon{color:#b083ff!important}
+.studio3-hero-copy p,.studio3-toolbar p{color:#c5b6d8!important}
+.studio3-panel,.studio3-event-row,.studio3-sale-row{border-color:rgba(145,95,199,.37)!important}
+.studio3-action-icon{color:#e3beff!important;background:#482c71!important}
+.studio3-actions-list button:hover .studio3-action-icon{background:#7441ba!important}
+.studio3-event-date{background:#42265e!important;border-color:#7852a7!important}
+.studio3-sale-icon{background:#143b3d!important;color:#71f9de!important}
+.studio3-footnote{color:#9a8dad!important}
+.studio3-chart .chart-line{stroke:#af70ff!important;filter:drop-shadow(0 0 7px #995eff)}
+.studio3-chart .chart-point{fill:#67f9dd!important}
+.studio3-chart .chart-gridline{stroke:#49345f!important}
+.v6-quick,.v6-alert,.v6-upcoming-event{
+  background:rgba(70,40,111,.4)!important;border-color:#543a78!important;color:#f4edff!important;
+}
+.v6-alert:hover,.v6-quick:hover,.v6-upcoming-event:hover{background:rgba(107,57,168,.52)!important}
+.v6-metric-top i{color:#c4a4ff!important}
+.v6-period.selected{background:#743dc1!important;color:#fff!important}
+
+/* Screenshot-led Event Radar layout and result cards */
+.ceyrl-radar{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:22px;align-items:start}
+.ceyrl-radar-primary{min-width:0}
+.ceyrl-radar-hero{
+  min-height:290px;border-radius:22px;display:flex;align-items:flex-start;overflow:hidden;position:relative;
+  padding:24px 28px 66px;border:1px solid rgba(135,75,204,.52);
+  background:linear-gradient(96deg,rgba(18,10,49,.97),rgba(37,16,81,.82) 48%,rgba(8,15,41,.09) 90%),
+    url('/static/concert-aurora.svg') 68% center/cover no-repeat;
+  box-shadow:0 12px 42px rgba(74,27,153,.16);
+}
+.ceyrl-radar-hero:after{
+  content:"";inset:0;position:absolute;pointer-events:none;
+  background:radial-gradient(ellipse at 30% 0%,rgba(159,62,250,.28),transparent 54%)
+}
+.ceyrl-radar-hero-copy{position:relative;z-index:1;max-width:690px}
+.ceyrl-hero-tag{
+  display:inline-flex;border:1px solid #7950ad;background:rgba(100,38,166,.46);
+  padding:7px 13px;border-radius:99px;color:#e9bcff;font-weight:700;font-size:12px;align-items:center;
+}
+.ceyrl-radar-hero h1{margin:17px 0 11px;font-size:clamp(26px,2.55vw,38px);line-height:1.18;letter-spacing:-1.1px;font-weight:785;color:#fff}
+.ceyrl-radar-hero h1 em{font-style:normal;color:#cba3ff}
+.ceyrl-radar-hero p{color:#d2c5e0;max-width:610px;font-size:13px;line-height:1.7}
+.ceyrl-radar-search{margin-top:-57px;position:relative;z-index:2;padding:0 16px 17px}
+.ceyrl-search-form{
+  display:flex;gap:10px;align-items:center;border-radius:18px;padding:7px;
+  border:1px solid #b55cfc;background:linear-gradient(118deg,rgba(45,27,83,.98),rgba(39,37,87,.96));
+  box-shadow:0 0 0 4px rgba(134,58,234,.08),0 7px 28px rgba(111,41,194,.23);
+}
+.ceyrl-search-input{display:flex;align-items:center;gap:11px;min-width:0;flex:1}
+.ceyrl-search-input span{color:#f4e6ff;font-size:31px;margin-left:13px}
+.ceyrl-search-input input{
+  width:100%;min-width:0;border:0!important;background:transparent!important;box-shadow:none!important;
+  color:#fdf7ff!important;font-size:14px;padding:12px 6px!important;min-height:45px
+}
+.ceyrl-search-input input:focus{outline:0!important;box-shadow:none!important}
+.ceyrl-search-form .btn.primary{flex-shrink:0;padding:13px 22px!important;min-height:45px;white-space:nowrap}
+.ceyrl-radar-shortcuts{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:17px 6px 0}
+.ceyrl-radar-shortcuts strong{font-size:12px;color:#e0d0f3;margin-right:4px}
+.ceyrl-radar-shortcuts button{
+  border-radius:99px;padding:7px 12px;font-size:11px;color:#e5d8f5;
+  background:rgba(86,47,139,.34);border:1px solid rgba(171,99,237,.42);
+}
+.ceyrl-radar-shortcuts button:hover{background:rgba(141,66,211,.5);border-color:#ba7aff}
+.ceyrl-radar-filters{
+  display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:6px 0 16px;
+  padding:15px;background:linear-gradient(108deg,#28183f,#1a1539);
+  border:1px solid #5b367c;border-radius:15px;
+}
+.ceyrl-radar-filters label{display:flex;flex:1 1 130px;min-width:120px;flex-direction:column;gap:5px;font-size:11px;font-weight:650;color:#bca4da}
+.ceyrl-radar-filters select,.ceyrl-radar-filters input{
+  background:#211735!important;color:#f5efff!important;border:1px solid #624481!important;
+  padding:10px 11px!important;width:100%;min-height:40px;border-radius:11px!important;font-size:12px;
+}
+.ceyrl-radar-filters .ceyrl-reset-filters{
+  color:#d9bbf3;background:transparent;border:0;padding:11px;min-height:41px;white-space:nowrap;font-size:12px
+}
+.ceyrl-radar-filters .ceyrl-reset-filters:hover{color:#70f9db}
+.ceyrl-radar-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.ceyrl-radar-actions .btn{font-size:11px;min-height:38px;padding:9px 12px}
+.ceyrl-live-results{min-width:0}
+.ceyrl-radar-results{margin-bottom:16px}
+.ceyrl-results-summary{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:16px 0 17px}
+.ceyrl-results-summary h2{font-size:21px;letter-spacing:-.65px;font-weight:750;color:#f8f4ff}
+.ceyrl-results-summary h2 span{color:#c87aff}
+.ceyrl-results-summary small{display:block;color:#9e90b6;font-size:11px;max-width:570px;line-height:1.55;margin-top:4px}
+.ceyrl-results-controls{display:flex;align-items:center;gap:6px}
+.ceyrl-results-controls label{font-size:11px;color:#aa93c5}
+.ceyrl-results-controls select{
+  min-height:36px;color:#ece1fb;border:1px solid #634386!important;background:#251943!important;
+  padding:7px;border-radius:9px;font-size:11px
+}
+.ceyrl-results-controls button{
+  display:grid;place-items:center;width:33px;height:34px;padding:0;font-size:15px;
+  border:1px solid #5b3a80;background:#2a1d48;color:#dac4f7;border-radius:8px
+}
+.ceyrl-results-controls button[aria-pressed=true]{background:#783ebd;border-color:#b27bff;color:#fff}
+.ceyrl-event-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ceyrl-event-card{
+  min-width:0;display:flex;flex-direction:column;border:1px solid rgba(135,77,194,.55);
+  border-radius:17px;overflow:hidden;background:linear-gradient(145deg,#201536,#111329);
+  box-shadow:0 10px 35px rgba(5,4,23,.2);transition:transform .18s,box-shadow .18s,border-color .18s;
+}
+.ceyrl-event-card:hover{border-color:#58e9d9;box-shadow:0 14px 34px rgba(24,200,201,.1),0 10px 30px rgba(93,45,182,.2);transform:translateY(-3px)}
+.ceyrl-event-image{height:157px;position:relative;overflow:hidden;background:#28194a}
+.ceyrl-event-image>img{display:block;width:100%;height:100%;object-fit:cover}
+.ceyrl-event-image:after{content:"";position:absolute;inset:30% 0 0;pointer-events:none;background:linear-gradient(transparent,#120d29bd)}
+.ceyrl-event-art{
+  display:grid;place-items:center;height:100%;background:
+    linear-gradient(128deg,rgba(14,17,41,.22),rgba(17,9,42,.25)),
+    url('/static/concert-aurora.svg') center/cover no-repeat
+}
+.ceyrl-event-art span{font-size:44px;color:#f2d6ff;text-shadow:0 0 25px #b862ff}
+.ceyrl-event-category{
+  position:absolute;z-index:1;bottom:12px;left:13px;
+  font-size:10px;font-weight:730;padding:5px 9px;border-radius:99px;
+  color:#efe0ff;border:1px solid #a86ff0;background:rgba(58,21,111,.85)
+}
+.ceyrl-event-body{display:flex;flex:1;flex-direction:column;gap:6px;padding:13px 14px 15px;min-height:180px}
+.ceyrl-event-source{font-size:10px;color:#c3a3ed;letter-spacing:.35px}
+.ceyrl-event-body h3{font-size:15px;line-height:1.32;letter-spacing:-.2px;color:#f5efff;min-height:38px}
+.ceyrl-event-body p{font-size:11px;color:#beb0ce;display:flex;gap:7px;line-height:1.5}
+.ceyrl-event-body p span{font-size:12px;color:#cba2ff}
+.ceyrl-event-card-actions{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-top:auto;padding-top:12px}
+.ceyrl-event-card-actions .btn{min-height:32px;padding:8px 9px;font-size:10px;line-height:1.2}
+.ceyrl-event-link{color:#62f6db!important;font-size:10px;font-weight:750;line-height:1.4;text-decoration:none}
+.ceyrl-event-link:hover{text-decoration:underline}
+.ceyrl-source-missing{font-size:10px;color:#9281a8}
+.ceyrl-event-grid.ceyrl-list-view{grid-template-columns:1fr}
+.ceyrl-event-grid.ceyrl-list-view .ceyrl-event-card{flex-direction:row;min-height:180px}
+.ceyrl-event-grid.ceyrl-list-view .ceyrl-event-image{height:auto;min-height:180px;width:230px;flex:0 0 230px}
+.ceyrl-event-grid.ceyrl-list-view .ceyrl-event-body{min-height:0}
+.ceyrl-radar-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  padding:50px 20px;border:1px dashed #6d4692;border-radius:16px;background:rgba(51,25,81,.35);text-align:center;
+}
+.ceyrl-radar-empty span{display:grid;place-items:center;width:60px;height:60px;border-radius:18px;background:#4b2577;color:#d7b6ff;font-size:30px}
+.ceyrl-radar-empty strong{color:#f3ebff;font-size:17px}
+.ceyrl-radar-empty p{color:#aa9cbe;max-width:460px;font-size:12px;line-height:1.65}
+.ceyrl-radar-aside{display:flex;flex-direction:column;gap:16px;min-width:0;padding-top:0}
+.ceyrl-aside-panel{
+  border:1px solid rgba(136,91,189,.4);border-radius:17px;
+  background:linear-gradient(148deg,rgba(37,26,67,.94),rgba(19,17,44,.97));
+  box-shadow:0 10px 32px rgba(6,4,27,.18);padding:18px;
+}
+.ceyrl-panel-head{display:flex;align-items:center;justify-content:space-between;gap:9px;border-bottom:1px solid #50376b;padding-bottom:13px;margin-bottom:12px}
+.ceyrl-panel-head h2{font-size:15px;font-weight:750;color:#f8efff}
+.ceyrl-panel-head>span:not(.ceyrl-source-indicator){font-size:11px;color:#a78fc6}
+.ceyrl-source-indicator{font-size:10px;padding:6px 9px;border-radius:99px;background:#443358;color:#e7c89f;border:1px solid #7a566e;white-space:nowrap}
+.ceyrl-source-indicator.ceyrl-connected{background:#153f3b;color:#81f8d5;border-color:#337d70}
+.ceyrl-source-list>div{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #483264}
+.ceyrl-source-list>div:last-child{border:0}
+.ceyrl-source-mark{display:grid;place-items:center;width:25px;height:25px;flex:0 0 25px;border-radius:50%;font-size:12px;font-weight:800;color:white;background:#1477d0}
+.ceyrl-source-mark.ceyrl-tf{background:#ac36c9}
+.ceyrl-source-mark.ceyrl-sp{background:#009a99}
+.ceyrl-source-list>div>span:nth-child(2){min-width:0;flex:1}
+.ceyrl-source-list strong{display:block;font-size:11px;color:#f6efff}
+.ceyrl-source-list small{display:block;margin-top:3px;font-size:10px;color:#a99bbe;line-height:1.4}
+.ceyrl-source-list i{width:7px;height:7px;border-radius:50%;background:#927baf;flex:0 0 7px}
+.ceyrl-source-list i.ceyrl-ready{background:#49eacb;box-shadow:0 0 9px #50d9b8a3}
+.ceyrl-source-explainer{font-size:10px;color:#9689a7;line-height:1.6;margin-top:10px}
+.ceyrl-panel-muted{font-size:11px;color:#b8aac8;line-height:1.75}
+.ceyrl-watch-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #45305f}
+.ceyrl-watch-row:last-child{border:0}
+.ceyrl-watch-row>div{min-width:0}
+.ceyrl-watch-row strong{display:block;color:#f1e9fc;font-size:11px;overflow-wrap:anywhere}
+.ceyrl-watch-row small{display:block;color:#a897bc;font-size:10px;margin-top:2px}
+.ceyrl-watch-row button{background:#402552;border:1px solid #6c4a83;border-radius:8px;color:#eec9ff;width:30px;height:30px}
+.ceyrl-watch-row button:hover{background:#623575}
+.ceyrl-radar .x-radar-provider-note,.ceyrl-radar .x-api-error{border-radius:12px;padding:13px 16px}
+.ceyrl-radar .studio-radar-links{margin:18px 0 0}
+
+/* Consistent immersive media treatments throughout inventory and dashboard. */
+.event-card{position:relative;overflow:hidden}
+.event-card:before{
+  content:"";height:78px;display:block;margin:-1px -1px 17px;
+  background:linear-gradient(90deg,rgba(32,17,72,.65),rgba(6,21,44,.18)),
+   url('/static/concert-aurora.svg') center/cover no-repeat;
+}
+.event-card h3{font-size:17px;color:#f5edff}
+.event-type{color:#b992ff!important}
+.event-bottom{border-color:#52376f!important}
+.filters{background:rgba(38,23,68,.4)!important;border-color:#533679!important}
+.auth-layout .auth-preview-bars span{background:#a36bf3}
+.toast{background:#392458!important;border:1px solid #8866ba!important;color:#fff!important}
+.toast.error{background:#54233e!important;border-color:#ad4971!important}
+
+/* Motion and responsive behaviour */
+@keyframes ceyrl-aurora-entry{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-content>.page-heading,.studio3-overview,.ceyrl-radar,.studio-account-header,.studio-account-grid{
+  animation:ceyrl-aurora-entry .35s cubic-bezier(.2,.72,.25,1) both
+}
+@media(hover:hover) and (pointer:fine){
+  .panel:hover,.x-panel:hover,.studio-settings-panel:hover{border-color:rgba(182,112,242,.5)!important}
+}
+@media(max-width:1380px){
+  .ceyrl-radar{grid-template-columns:minmax(0,1fr) 260px;gap:17px}
+  .ceyrl-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:1090px){
+  .ceyrl-radar{grid-template-columns:1fr}
+  .ceyrl-radar-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ceyrl-radar-aside .ceyrl-aside-panel:first-child{grid-column:span 2}
+}
+@media(max-width:900px){
+  body:not(.auth-active) .workspace .sidebar{width:260px;flex-basis:260px;z-index:110}
+  .ceyrl-radar-hero{min-height:260px}
+}
+@media(max-width:650px){
+  body:not(.auth-active) .page-content{padding:18px 13px 54px!important}
+  .ceyrl-radar-hero{padding:20px 18px 63px;min-height:270px;background-position:58% center}
+  .ceyrl-radar-hero h1{font-size:27px}
+  .ceyrl-radar-search{padding:0 8px 11px}
+  .ceyrl-search-form .btn.primary{padding:12px 11px!important}
+  .ceyrl-search-input input{font-size:12px}
+  .ceyrl-radar-shortcuts{padding-top:14px}
+  .ceyrl-radar-filters{padding:12px}
+  .ceyrl-radar-filters label{flex:1 1 calc(50% - 10px)}
+  .ceyrl-radar-filters .ceyrl-reset-filters{width:100%}
+  .ceyrl-event-grid{grid-template-columns:1fr}
+  .ceyrl-event-image{height:190px}
+  .ceyrl-radar-aside{grid-template-columns:1fr}
+  .ceyrl-radar-aside .ceyrl-aside-panel:first-child{grid-column:auto}
+  .ceyrl-results-summary{align-items:flex-start;flex-direction:column}
+  .ceyrl-event-grid.ceyrl-list-view .ceyrl-event-image{width:115px;flex-basis:115px;min-height:160px}
+  .ceyrl-event-grid.ceyrl-list-view .ceyrl-event-body{padding:11px}
+  .ceyrl-event-grid.ceyrl-list-view .ceyrl-event-card-actions{flex-direction:column;align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  .page-content>.page-heading,.studio3-overview,.ceyrl-radar,.studio-account-header,.studio-account-grid{
+    animation:none!important
+  }
+  .ceyrl-event-card,.btn,.nav-item,.panel,.x-panel{transition:none!important}
+  .ceyrl-event-card:hover,.btn.primary:hover{transform:none!important}
+}
+body.motion-off .ceyrl-radar,
+body.motion-off .ceyrl-event-card,
+body.motion-off .studio3-overview{animation:none!important}
