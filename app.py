@@ -737,6 +737,36 @@ def change_password(payload: NewPassword,request: Request):
     return {'ok':True}
 
 
+
+# Account security controls expose no cookies, session IDs, CSRF secrets or
+# password material. The currently signed-in device cannot revoke itself here.
+@app.get('/api/me/sessions')
+def my_sessions(request: Request):
+    user = require_user(request)
+    current = digest(request.cookies[LOGIN_COOKIE])
+    with connection(AUTH_DB) as db:
+        rows = select(db, '''SELECT token_hash, expires_at FROM sessions
+            WHERE user_id=? AND expires_at>?''', (user['id'], stamp()))
+    return {
+        'active': len(rows),
+        'other': sum(row['token_hash'] != current for row in rows),
+        'current_expires_at': next((row['expires_at'] for row in rows
+                                    if row['token_hash'] == current), None)
+    }
+
+
+@app.post('/api/me/sessions/revoke-others')
+def revoke_other_sessions(request: Request):
+    user = require_user(request, True)
+    current = digest(request.cookies[LOGIN_COOKIE])
+    with connection(AUTH_DB, True) as db:
+        cur = db.execute(
+            'DELETE FROM sessions WHERE user_id=? AND token_hash<>?',
+            (user['id'], current)
+        )
+    return {'ok': True, 'revoked': cur.rowcount}
+
+
 # --- Each endpoint below receives the authenticated user's *private* database. ---
 
 class EventInput(BaseModel):

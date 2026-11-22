@@ -29,6 +29,7 @@ jobs:
           node --check static/app.js
           node --check static/v6.js
           node --check static/x.js
+          node --check static/studio.js
       - name: Compile backend modules
         run: |
           python -m py_compile app.py
