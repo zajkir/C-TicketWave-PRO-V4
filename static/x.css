@@ -141,3 +141,25 @@
   .x-copilot-options{gap:10px 17px}
   .x-chat-submit .btn{width:100%}
 }
+
+
+/* Radar: multi-source discovery, filters and explicit source fallbacks. */
+.x-radar-form #x-radar-kind {min-width:172px;flex:0 1 185px}
+.x-radar-form #x-radar-country {flex:0 1 175px}
+.x-radar-search-source {margin:15px 0 12px;color:#b0b7c7;line-height:1.7}
+.x-radar-external {
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  background:linear-gradient(125deg,rgba(37,44,65,.92),rgba(27,43,50,.85));
+  border:1px solid #4d688068;border-radius:15px;padding:16px 18px;margin:14px 0 22px;
+}
+.x-radar-external strong {width:100%;color:#d2eae3;font-size:12px;letter-spacing:.3px}
+.x-radar-external p {width:100%;font-size:11px;color:#a9b9c1;margin:0 0 4px;line-height:1.6}
+.x-radar-external a{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 12px;border-radius:9px;border:1px solid #746995;
+  background:#34304e;color:#e1d3ff;text-decoration:none;font-size:11px;
+}
+.x-radar-external a:hover {background:#493c63;border-color:#aa92e1;color:white}
+@media(max-width:650px){
+  .x-radar-form #x-radar-kind,.x-radar-form #x-radar-country {flex:1 1 100%;min-width:0}
+}
