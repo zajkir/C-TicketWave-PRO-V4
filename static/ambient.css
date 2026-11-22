@@ -186,7 +186,9 @@ body {
   clip-path: inset(0 48% 0 0);
 }
 body.auth-active .ceyrl-auth-ambience { visibility: visible; opacity: 1; }
-.auth-aside-inner, .auth-card, .auth-footer { position: relative; z-index: 2; }
+.auth-aside-inner, .auth-card { position: relative; z-index: 2; }
+/* The footer must remain in its own flow slot beneath the form. */
+.auth-footer { z-index: 2; }
 .auth-ambient-ticket {
   position: absolute;
   width: 156px;
