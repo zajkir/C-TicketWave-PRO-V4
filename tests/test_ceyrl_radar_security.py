@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime, timezone, timedelta
 
 import ceyrl_radar
+import ceyrl_concerthub
 from test_v5 import app_clients, signup
 
 
@@ -104,6 +105,7 @@ def test_radar_rejects_excessive_requests(app_clients,monkeypatch):
     _,alice,_,_=app_clients
     signup(alice,"ratelimit-radar@example.com","Rate Radar")
     monkeypatch.setattr(ceyrl_radar,"request_public",lambda q,c:[])
+    monkeypatch.setattr(ceyrl_concerthub,"request_concerthub",lambda q:[])
     status=[]
     for x in range(21):
         result=alice.get("/api/x/radar/search?q=Music%20"+str(x)+"&country=")
