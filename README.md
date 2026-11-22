@@ -7,9 +7,12 @@ A professional, private-by-design ticket and sales manager with a new responsive
 The main **Event Radar** now lets users quickly search **Noah Kahan, Nickelback, BTS, Coldplay, Post Malone, The Weeknd, Morgan Wallen, Billie Eilish, Taylor Swift, Ed Sheeran, Dua Lipa, Olivia Rodrigo, Imagine Dragons, Metallica, Harry Styles, Sabrina Carpenter, Bad Bunny, KATSEYE, RAYE, Tame Impala, Sam Fender, Calin, BLACKPINK and Stray Kids**. These are **search shortcuts, not fabricated event announcements**. Users can also enter **any artist or event name**. The search mode offers All events / Concerts & festivals / Sports & football.
 
 **Keyless sources for all logged-in users:**
-- [StungEvents public search API](https://docs.stungevents.com/docs) (read-only search, no key; provider documents limits and geographic coverage). Used fields: event title, ISO date, city, venue and provider event page. Strict trusted event URLs are constructed from public event slugs; arbitrary third-party purchase links are not trusted.
-- [Ticket Fairy public events](https://www.ticketfairy.com/developers), secondary source when earlier searches found no events.
-- TheSportsDB and selected public football schedules, as before.
+- [Gigora public concerts API](https://gigora.live/developers) is now the **primary** public artist-tour source. It requires no API key and publishes real concerts in its own catalog, returning UTC event dates and source URLs. The provider states a catalog of tens of thousands of concerts worldwide. Ceyrl never invents tour dates for artists with no listing.
+- [StungEvents public search API](https://docs.stungevents.com/docs) is a **backup only when the primary source has no matches**. Earlier versions queried it first and sometimes displayed a red failure banner on every artist. An unavailable backup no longer blocks successful discovery or triggers a large red banner.
+- [Ticket Fairy public events](https://www.ticketfairy.com/developers) is a final secondary source when earlier event searches have no results.
+- TheSportsDB and selected public football schedules remain in place.
+
+When available data is incomplete, the Radar distinguishes missing listings from provider outages and provides external links to Ticketmaster or Songkick. Those links open their public search pages and do **not** represent confirmed results from Ceyrl. All Gigora import URLs are validated as Gigora-hosted HTTPS pages (with only allowed tracking parameters) and then stored in the account-scoped recent-result cache before a user can explicitly import the event.
 
 **Optional server-wide integrations — operator key only, no user keys:**
 - `CTW_TICKETMASTER_API_KEY=` uses [Ticketmaster Discovery API](https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/) to expand coverage to Ticketmaster concerts worldwide, subject to provider limits.
