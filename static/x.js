@@ -8,6 +8,12 @@ let xRadarCoverage='';
 let xRadarQuery='';
 let xRadarCountry='';
 let xRadarKind='all';
+const xRadarPopularArtists=[
+  'Noah Kahan','Nickelback','BTS','Coldplay','Post Malone','The Weeknd',
+  'Morgan Wallen','Billie Eilish','Taylor Swift','Ed Sheeran','Dua Lipa',
+  'Olivia Rodrigo','Imagine Dragons','Metallica','Harry Styles','Sabrina Carpenter',
+  'Bad Bunny','KATSEYE','RAYE','Tame Impala','Sam Fender','Calin','BLACKPINK','Stray Kids'
+];
 
 const xEsc=(v)=>escapeHtml(v==null?'':v);
 const xTag=(text,type='neutral')=>'<span class="x-tag x-tag-'+type+'">'+xEsc(text)+'</span>';
@@ -254,8 +260,8 @@ async function renderXRadar(){
   root.innerHTML=heading('Event Radar',
     'Discover public events instantly, without any personal API key.')+
     '<section class="x-hero x-radar-hero"><div><span class="x-eyebrow">CEYRL / EVENT DISCOVERY</span>'+
-    '<h2>Find what’s next.<br><em>Stay one step ahead.</em></h2>'+
-    '<p>Search upcoming events and follow artists or event keywords. Import verified listings into your personal calendar with one click.</p>'+
+    '<h2>Find concerts worldwide.<br><em>From BTS to Noah Kahan.</em></h2>'+
+    '<p>Find tour dates for international artists, bands, K-pop, festivals and sports across public catalogs. No personal API key needed.</p>'+
     '</div><span class="x-hero-decoration" aria-hidden="true">⌾</span></section>'+
     '<div class="x-radar-status">'+xTag('No personal API key needed','neutral')+
     '<span>'+xEsc(status.provider)+'</span></div>'+
@@ -271,6 +277,11 @@ async function renderXRadar(){
      ['GB','United Kingdom'],['US','USA'],['FR','France'],['IT','Italy'],['ES','Spain'],['NL','Netherlands']]
        .map(([c,n])=>'<option value="'+c+'" '+(xRadarCountry===c?'selected':'')+'>'+n+'</option>').join('')+
     '</select><button class="btn primary" type="submit">Search events ↗</button></form>'+
+    '<section class="x-radar-artists"><div class="x-radar-artists-header">'+
+      '<strong>Quick-search popular artists</strong><small>Shortcuts only — tour dates must be verified</small></div>'+
+      '<div class="x-radar-artist-chips">'+xRadarPopularArtists.map(a=>
+        '<button type="button" class="x-radar-artist-chip" data-x-artist="'+xEsc(a)+'">'+
+        xEsc(a)+'</button>').join('')+'</div></section>'+
     '<div class="x-search-actions"><button class="btn outline" type="button" data-x-action="radar-follow">+ Follow this search</button>'+
     '<button class="btn outline" type="button" data-x-action="radar-refresh">Refresh watched events</button></div>'+
     '<div id="x-radar-results">'+(xRadarEvents.length?xRadarResultsHtml(xRadarEvents):xNote('Enter an artist or event to search public listings. No personal API key required.'))+'</div>'+
@@ -342,9 +353,15 @@ async function xRadarSearch(){
 
 function initXPages(){
   $('#page-content').addEventListener('click',async event=>{
-    const btn=event.target.closest('[data-x-action], [data-x-example], [data-x-import], [data-x-delivery], [data-x-goto], [data-x-remove-watch]');
+    const btn=event.target.closest('[data-x-action], [data-x-example], [data-x-import], [data-x-delivery], [data-x-goto], [data-x-remove-watch], [data-x-artist]');
     if(!btn)return;
     try{
+      if(btn.dataset.xArtist){
+        $('#x-radar-query').value=btn.dataset.xArtist;
+        $('#x-radar-kind').value='music';
+        $('#x-radar-country').value='';
+        return xRadarSearch();
+      }
       if(btn.dataset.xExample){$('#x-chat-question').value=btn.dataset.xExample;return xAskCopilot()}
       if(btn.dataset.xGoto)return navigate(btn.dataset.xGoto);
       if(btn.dataset.xDelivery)return xEditDelivery(Number(btn.dataset.xDelivery));
