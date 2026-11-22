@@ -49,8 +49,10 @@ def test_radar_displays_only_real_data_and_uses_existing_handlers(app_clients):
     assert 'id="x-radar-kind"' in js
     for action in ['data-x-import=', 'data-x-artist=', 'data-x-action="radar-refresh"', 'data-x-action="radar-follow"', 'data-x-remove-watch=']:
         assert action in js
-    assert 'Stav neznámy' in js
-    assert 'Rozšírené vyhľadávanie nenastavené' in js
+    assert 'Stav neoverený' in js
+    assert 'Bez osobného API kľúča' in js
+    assert 'Rozšírené vyhľadávanie nenastavené' not in js
+    assert 'ConcertHub' in js
     assert 'Nezobrazujeme vymyslené koncerty ani ceny.' in js
     assert 'data-aurora-view' in js
     assert 'ceyrl-date-from' in js
