@@ -91,7 +91,7 @@ def test_concert_country_filter_and_absent_artist_are_honest(app_clients,monkeyp
     assert not_found.status_code==200
     assert not_found.json()["events"]==[]
     assert "StungEvents" in not_found.json()["sources_checked"]
-    assert "Not all artists" in not_found.json()["coverage_note"]
+    assert "No result" in not_found.json()["coverage_note"]
 
 
 def test_tickets_dev_server_only_catalog_normalization_and_url_validation(app_clients,monkeypatch):
