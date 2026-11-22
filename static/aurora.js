@@ -21,6 +21,7 @@
       const u = new URL(value);
       if (u.protocol !== 'https:' || u.username || u.password) return '';
       if (/^(?:www\.)?ticketfairy\.com$/i.test(u.hostname)) return value;
+      if (u.hostname==='concerthub.pl' && /^\/en\/event\/[a-z0-9][a-z0-9-]{3,129}$/.test(u.pathname) && !u.search && !u.hash) return value;
       if (/^(?:www\.)?ticketmaster\.(?:com|co\.uk|de|fr|es|it|nl|be|ch|ca|ie|cz|pl|at|hu|com\.au)$/i.test(u.hostname)) return value;
       if (u.hostname==='www.espn.com' || u.hostname==='www.thesportsdb.com') return value;
     } catch (_) {}
@@ -93,12 +94,14 @@
   const sourceState=(status,failed)=> {
     const tm = status.global_concerts_enabled===true;
     return '<div class="ceyrl-source-list">'+
+      '<div><span class="ceyrl-source-mark ceyrl-tf">♫</span><span><strong>Ticket Fairy</strong><small>Verejné koncerty a festivaly</small></span><i></i></div>'+
+      '<div><span class="ceyrl-source-mark ceyrl-ch">♪</span><span><strong>ConcertHub</strong><small>Verejné koncerty v Poľsku</small></span><i></i></div>'+
       '<div><span class="ceyrl-source-mark">T</span><span><strong>Ticketmaster</strong><small>'+
-      (failed?'Stav neznámy':tm?'Kľúč na serveri nastavený':'Rozšírené vyhľadávanie nenastavené')+
+      (failed?'Stav neoverený':tm?'Doplnkový katalóg nakonfigurovaný':'Vyhľadávanie cez oficiálny odkaz')+
       '</small></span><i class="'+(!failed&&tm?'ceyrl-ready':'')+'"></i></div>'+
-      '<div><span class="ceyrl-source-mark ceyrl-tf">♫</span><span><strong>Ticket Fairy</strong><small>Verejný katalóg; overuje sa pri hľadaní</small></span><i></i></div>'+
       '<div><span class="ceyrl-source-mark ceyrl-sp">◈</span><span><strong>Športové zdroje</strong><small>Pokrytie podľa športu a súťaže</small></span><i></i></div></div>';
   };
+
   const watched=(watches,failed)=>failed?
     '<p class="ceyrl-panel-muted" role="alert">Uložené vyhľadávania sa nepodarilo načítať.</p>':
     watches.length?watches.slice(0,10).map(w=>
@@ -152,8 +155,8 @@
       '</div></div>'+
       '<aside class="ceyrl-radar-aside" aria-label="Prehľad Event Radaru">'+
       '<section class="ceyrl-aside-panel"><div class="ceyrl-panel-head"><h2>Stav zdrojov</h2>'+
-      '<span class="ceyrl-source-indicator '+(configured&&!failed?'ceyrl-connected':'')+'">'+
-      (failed?'Neoverený':configured?'Nastavené':'Obmedzené pokrytie')+'</span></div>'+
+      '<span class="ceyrl-source-indicator">'+
+      (failed?'Stav neoverený':'Bez osobného API kľúča')+'</span></div>'+
       sourceState(status,failed)+'<p class="ceyrl-source-explainer">'+esc(status.coverage_note||'Pokrytie zdrojov sa môže líšiť.')+'</p></section>'+
       '<section class="ceyrl-aside-panel"><div class="ceyrl-panel-head"><h2>Uložené sledovania</h2><span>'+ws.length+'/15</span></div>'+
       watched(ws,watchError)+'</section>'+
