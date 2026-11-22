@@ -38,4 +38,5 @@ jobs:
           python -m py_compile ceyrl_radar.py
           python -m py_compile ceyrl_sports.py
           python -m py_compile ceyrl_music.py
+          python -m py_compile ceyrl_gigora.py
           python -m py_compile ceyrl_ai.py
