@@ -137,6 +137,16 @@ def _valid_provider_url(url):
     """Strict trusted URL allowlist for verified public provider imports."""
     if _valid_event_url(url):
         return True
+    if isinstance(url,str) and len(url)<=260:
+        try:
+            parts=urlsplit(url)
+            if (parts.scheme=="https" and parts.hostname=="concerthub.pl"
+                    and parts.port in (None,443) and not parts.username and not parts.password
+                    and not parts.query and not parts.fragment
+                    and re.fullmatch(r"/en/event/[a-z0-9][a-z0-9-]{3,129}",parts.path)):
+                return True
+        except ValueError:
+            pass
     if not isinstance(url,str) or len(url)>800:
         return False
     try:
@@ -167,7 +177,8 @@ def remember(db,events):
     for item in events:
         ident=item.get("id","")
         if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",ident) or
-                re.fullmatch(r"sp:(?:ts|es):\d{1,12}",ident)):
+                re.fullmatch(r"sp:(?:ts|es):\d{1,12}",ident) or
+                re.fullmatch(r"ch:[a-z0-9][a-z0-9-]{3,129}",ident)):
             continue
         if not _valid_provider_url(item.get("url")):
             continue
@@ -181,7 +192,8 @@ def remember(db,events):
 
 def lookup(db,external_id):
     if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",external_id) or
-            re.fullmatch(r"sp:(?:ts|es):\d{1,12}",external_id)):
+            re.fullmatch(r"sp:(?:ts|es):\d{1,12}",external_id) or
+            re.fullmatch(r"ch:[a-z0-9][a-z0-9-]{3,129}",external_id)):
         raise HTTPException(422,"Invalid event identifier.")
     init_cache(db)
     row=db.execute("""SELECT payload,observed_at FROM x_radar_public_results

@@ -17,7 +17,8 @@
     return '<section class="studio-radar-links" aria-label="Official external searches">' +
       '<a href="https://www.ticketmaster.com/search?q=' + encoded + '" rel="noopener noreferrer" target="_blank">Ticketmaster search ↗</a>' +
       '<a href="https://www.songkick.com/search?query=' + encoded + '" rel="noopener noreferrer" target="_blank">Songkick search ↗</a>' +
-      '<a href="https://www.bandsintown.com/search?q=' + encoded + '" rel="noopener noreferrer" target="_blank">Bandsintown search ↗</a></section>';
+      '<a href="https://www.bandsintown.com/search?q=' + encoded + '" rel="noopener noreferrer" target="_blank">Bandsintown search ↗</a>' +
+      '<a href="https://concerthub.pl/en/" rel="noopener noreferrer" target="_blank">ConcertHub Poland ↗</a></section>';
   }
 
   // Prevent cached searches from one signed-in person appearing for the next

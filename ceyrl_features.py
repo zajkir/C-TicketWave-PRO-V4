@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from ceyrl_shield import shield_report, delivery_score, VALID_METHODS
 import ceyrl_ai
 import ceyrl_radar
+import ceyrl_concerthub
 import ceyrl_sports
 
 TM_EVENTS="https://app.ticketmaster.com/discovery/v2/events.json"
@@ -194,13 +195,22 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                 sources.append("Ticket Fairy")
             except HTTPException:
                 warnings.append("Ticket Fairy is currently unavailable.")
+        # Additional keyless concerts from the documented ConcertHub JSON-RPC
+        # catalog. It covers Poland ONLY: never pretend those results apply to
+        # an explicitly selected other country.
+        if kind!="sports" and country in ("","PL") and (country=="PL" or not events):
+            try:
+                events += ceyrl_concerthub.search_concerthub(query,country)
+                sources.append("ConcertHub (Poland)")
+            except HTTPException:
+                warnings.append("ConcertHub's Polish concert catalog is temporarily unavailable.")
         if sport_query:
             sports,info=ceyrl_sports.search(query,country,kind)
             events += sports
             sources += info.get("checked",[])
             warnings += info.get("errors",[])
         if not sources:
-            raise HTTPException(502,"No usable event source responded. Check the hosting connection and provider credentials.")
+            raise HTTPException(502,"Event sources could not be reached. Please try again or use the direct official search links.")
         unique={}
         for item in events:
             if item.get("id") and item.get("name"):
@@ -210,10 +220,10 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
             "Global Ticketmaster search is enabled on this server. Listings are from "
             "third-party catalogs and do not guarantee ticket availability."
             if key else
-            "Only limited public listings are currently searchable inside Ceyrl. "
-            "For major artists such as Calin, BTS or Noah Kahan, the site owner must "
-            "configure a shared CTW_TICKETMASTER_API_KEY on the server. "
-            "Individual users never need a key."
+            "Search works without an API key using public event sources. "
+            "Ticket Fairy covers its published listings; ConcertHub adds Poland concerts. "
+            "These public catalogs do not contain every global tour. "
+            "Use the official search links for additional artist dates."
         )
         return results," + ".join(dict.fromkeys(sources)),{
             "sources_checked":list(dict.fromkeys(sources)),
@@ -282,15 +292,17 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                     os.getenv("TICKETMASTER_API_KEY","").strip())
         return {"connected":True,"key_required":False,"personal_key":personal,
                 "server_ticketmaster":shared,"watch_count":count,
-                "provider":("Ticketmaster + public events + sports schedules"
+                "provider":("Ticketmaster + Ticket Fairy + ConcertHub Poland + sports"
                             if shared or personal else
-                            "Ticket Fairy public listings + sports schedules"),
+                            "Ticket Fairy + ConcertHub Poland + sports"),
                 "global_concerts_enabled":bool(shared or personal),
-                "coverage_note":("Global Ticketmaster Discovery search is configured; "
-                                 "you do not need your own key." if shared or personal else
-                                 "Public events only. For worldwide concert search, the "
-                                 "site operator needs one shared Ticketmaster Discovery API "
-                                 "key set in the hosting Environment; users need no key."),
+                "keyless_search_enabled":True,
+                "keyless_sources":["Ticket Fairy","ConcertHub (Poland)","Sports fixtures"],
+                "coverage_note":("You can search events directly without your own key. "
+                                 "Ticketmaster and public source catalogs can be incomplete." if shared or personal else
+                                 "Search with no API key. Public sources cover only their listed events "
+                                 "(including Polish concerts); worldwide tour coverage is incomplete. "
+                                 "Use official links for more listings."),
                 "refresh_note":"Watchlist refreshes on demand. No background scheduler is active."}
 
     # Deprecated optional personal integration endpoints remain for existing users.
@@ -425,7 +437,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
     def radar_import(external_id:str,request:Request):
         user,path=user_db(request,True)
         ceyrl_radar.rate_limit(auth_db,connection,user["id"],"import")
-        if external_id.startswith(("tf:","sp:")):
+        if external_id.startswith(("tf:","sp:","ch:")):
             with connection(path,True) as db:
                 tm=ceyrl_radar.lookup(db,external_id)
         else:
