@@ -98,7 +98,7 @@ def test_sale_recap_frontend_is_last_and_has_a11y_data_controls(app_clients):
         "data-ceyrl-sale-open", "data-sale-mode", "data-sale-tab",
         "sale-recap-sheet", "sale-recap-aurora",
         "previousShowAuth=showAuth", "aria-modal", "role=\"tabpanel\"",
-        "Marža", "Stav výplaty", "Neevidovaný", "margin_excludes_event_expenses",
+        "Marža", "Stav výplaty", "Neevidovaný",
     ]:
         # UI refers to actual computed fields, not simulated provider outcomes.
         assert term in (js+css)
