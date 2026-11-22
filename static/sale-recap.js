@@ -134,7 +134,7 @@
       '<span class="sale-recap-brand">Ceyrl</span><span class="sale-recap-header-divide">/</span>'+
       '<span class="sale-recap-header-context">'+(mode==='full'?'SALE RECAP STUDIO':'RÝCHLA REKAPITULÁCIA')+'</span></div>'+
       '<div class="sale-recap-header-actions"><span class="sale-recap-private-tag">✧ Súkromný prehľad</span>'+
-      (mode==='full'?'<button type="button" data-sale-mode="quick" class="sale-recap-small">Zmenšiť</button>':'')+
+      (mode==='full'?'<button type="button" data-sale-mode="quick" class="sale-recap-small">Zmenšiť</button>':'<button type="button" data-sale-mode="full" class="sale-recap-small">↗ Celá obrazovka</button>')+
       '<button type="button" data-sale-close class="sale-recap-close" aria-label="Zavrieť detail predaja">×</button>'+
       '</div></header>'+
       '<div class="sale-recap-scroll">'+
