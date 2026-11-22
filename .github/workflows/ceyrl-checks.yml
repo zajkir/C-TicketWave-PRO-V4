@@ -33,6 +33,7 @@ jobs:
           node --check static/studio-dashboard.js
           node --check static/aurora.js
           node --check static/experience.js
+          node --check static/sale-recap.js
       - name: Compile backend modules
         run: |
           python -m py_compile app.py

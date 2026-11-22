@@ -1020,6 +1020,51 @@ def list_sales(request:Request):
             ORDER BY s.sold_at DESC''')
 
 
+
+@app.get('/api/sales/{sale_id}')
+def sale_detail(sale_id:int, request:Request):
+    """Read-only, account-scoped sale recap.
+
+    A single sale margin excludes event-wide expenses. Never conflate
+    unlike currencies or claim marketplace payout verification.
+    """
+    if sale_id < 1:
+        raise HTTPException(404, 'Sale not found in your account.')
+    _,p=user_db(request)
+    with connection(p) as db:
+        sale=select(db,'''SELECT s.*,t.event_id,t.quantity AS lot_quantity,
+            t.sold_quantity AS lot_sold_quantity,t.purchase_cents,
+            t.currency AS purchase_currency,t.section,t.row_label,t.seats,
+            t.provider,t.ticket_type,t.notes AS ticket_notes,
+            e.title AS event_title,e.starts_at AS event_starts_at,
+            e.venue AS event_venue,e.city AS event_city,
+            e.country AS event_country,
+            l.marketplace AS listing_marketplace
+            FROM sales s
+            JOIN tickets t ON t.id=s.ticket_id
+            JOIN events e ON e.id=t.event_id
+            LEFT JOIN listings l ON l.id=s.listing_id
+            WHERE s.id=?''',(sale_id,),True)
+    if not sale:
+        raise HTTPException(404, 'Sale not found in your account.')
+    # Revenue and fees are in the recorded sale currency.
+    receipts=sale['revenue_cents']-sale['fee_cents']
+    same_currency=sale['currency']==sale['purchase_currency']
+    cost=(sale['quantity']*sale['purchase_cents']) if same_currency else None
+    margin=(receipts-cost) if cost is not None else None
+    roi=(round(margin*100/cost,2) if cost else None) if same_currency else None
+    return {**sale,
+        'net_receipts_cents':receipts,
+        'sold_purchase_cost_cents':cost,
+        'sale_margin_cents':margin,
+        'sale_roi_percent':roi,
+        'margin_excludes_event_expenses':True,
+        'currency_mismatch':not same_currency,
+        'payout_status':None,
+        'payout_note':'Payout status is not tracked by Ceyrl.',
+    }
+
+
 @app.post('/api/sales')
 def add_sale(payload:SaleInput,request:Request):
     _,p=user_db(request,True)
