@@ -296,7 +296,7 @@ async def headers(request: Request, call_next):
     response.headers['X-Permitted-Cross-Domain-Policies'] = 'none'
     response.headers['Cache-Control'] = 'no-store'
     response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; img-src 'self' data:; font-src 'self'; "
+        "default-src 'self'; img-src 'self' data: https://s1.ticketm.net https://images1.ticketmaster.com https://images.ticketmaster.com; font-src 'self'; "
         "style-src 'self'; script-src 'self'; connect-src 'self'; "
         "form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
     )
