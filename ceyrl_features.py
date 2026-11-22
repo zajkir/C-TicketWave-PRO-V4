@@ -9,6 +9,7 @@ from fastapi import HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from ceyrl_shield import shield_report, delivery_score, VALID_METHODS
 import ceyrl_ai
+import ceyrl_radar
 
 TM_EVENTS="https://app.ticketmaster.com/discovery/v2/events.json"
 TM_ONE="https://app.ticketmaster.com/discovery/v2/events/"
@@ -75,7 +76,8 @@ def normalize_tm(item):
         "city":str(loc.get("name",""))[:120],
         "country":str((address.get("country") or {}).get("name") or "")[:100],
         "url":raw_url if raw_url.startswith("https://") else "",
-        "category":str(((item.get("classifications") or [{}])[0].get("segment") or {}).get("name") or "Concert")[:80]
+        "category":str(((item.get("classifications") or [{}])[0].get("segment") or {}).get("name") or "Concert")[:80],
+        "provider":"Ticketmaster"
     }
 
 def call_tm(key,params,one_id=None):
@@ -118,6 +120,22 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
         if not key:
             raise HTTPException(503,"Connect a Ticketmaster Discovery API key in Event Radar settings.")
         return key
+
+    def discover_events(user,path,query,country):
+        key=get_key(user,path)
+        if key:
+            params={"keyword":query.strip(),"size":15,"sort":"date,asc"}
+            if country:params["countryCode"]=country
+            try:
+                payload=call_tm(key,params)
+                events=[normalize_tm(x) for x in
+                    ((payload.get("_embedded") or {}).get("events") or [])[:15]]
+                return events,"Ticketmaster Discovery API"
+            except HTTPException:
+                # Legacy or server Ticketmaster credentials must not block the
+                # built-in public event provider when they're unavailable.
+                pass
+        return ceyrl_radar.search_public(query,country),"Ticket Fairy public events (keyless)"
 
     @app.get("/api/x/shield")
     def shield(request:Request):
