@@ -5,6 +5,14 @@ from datetime import datetime, timezone, timedelta
 
 import ceyrl_radar
 import ceyrl_music
+import ceyrl_gigora
+import pytest
+
+@pytest.fixture(autouse=True)
+def mock_extra_gigora(monkeypatch):
+    # Keyless original public source tests should never hit real networks.
+    monkeypatch.setattr(ceyrl_gigora,"search",lambda *args,**kwargs:
+        ([],{"checked":[],"errors":[]}))
 from test_v5 import app_clients, signup
 
 
