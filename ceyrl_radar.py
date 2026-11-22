@@ -133,6 +133,24 @@ def search_public(query,country):
     return [dict(x) for x in found]
 
 
+def _valid_provider_url(url):
+    """Strict allowlist for provider links stored in our private import cache."""
+    if _valid_event_url(url):
+        return True
+    if not isinstance(url,str) or len(url)>800:
+        return False
+    parts=urlsplit(url)
+    if parts.scheme!="https" or parts.username or parts.password:
+        return False
+    if parts.port not in (None,443) or parts.query or parts.fragment:
+        return False
+    if parts.hostname=="www.thesportsdb.com":
+        return bool(re.fullmatch(r"/event/\d{1,12}",parts.path))
+    if parts.hostname=="www.espn.com":
+        return bool(re.fullmatch(r"/soccer/match/_/gameId/\d{1,12}",parts.path))
+    return False
+
+
 def init_cache(db):
     db.execute("""CREATE TABLE IF NOT EXISTS x_radar_public_results(
         external_id TEXT PRIMARY KEY, payload TEXT NOT NULL, observed_at REAL NOT NULL
@@ -145,7 +163,11 @@ def remember(db,events):
     db.execute("DELETE FROM x_radar_public_results WHERE observed_at<?",
                (current-IMPORT_TTL,))
     for item in events:
-        if not item.get("id","").startswith("tf:"):
+        ident=item.get("id","")
+        if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",ident) or
+                re.fullmatch(r"sp:(?:ts|es):\d{1,12}",ident)):
+            continue
+        if not _valid_provider_url(item.get("url")):
             continue
         db.execute("""INSERT INTO x_radar_public_results(external_id,payload,observed_at)
             VALUES(?,?,?) ON CONFLICT(external_id) DO UPDATE SET
@@ -156,7 +178,8 @@ def remember(db,events):
 
 
 def lookup(db,external_id):
-    if not re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",external_id):
+    if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",external_id) or
+            re.fullmatch(r"sp:(?:ts|es):\d{1,12}",external_id)):
         raise HTTPException(422,"Invalid event identifier.")
     init_cache(db)
     row=db.execute("""SELECT payload,observed_at FROM x_radar_public_results
@@ -167,7 +190,7 @@ def lookup(db,external_id):
         record=json.loads(row["payload"])
     except (ValueError,TypeError):
         raise HTTPException(409,"Cached event details are invalid. Search again.")
-    if record.get("id")!=external_id or _valid_event_url(record.get("url")) is None:
+    if record.get("id")!=external_id or not _valid_provider_url(record.get("url")):
         raise HTTPException(409,"Cached event source is invalid. Search again.")
     if not record.get("starts_at") or not record.get("name"):
         raise HTTPException(409,"This event has no verified start time.")
