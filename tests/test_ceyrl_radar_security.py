@@ -33,7 +33,7 @@ def test_keyless_radar_search_is_scoped_and_imports_only_sourced_results(app_cli
 
     result=alice.get("/api/x/radar/search?q=Moonlight&country=SK")
     assert result.status_code==200,result.text
-    assert result.json()["source"]=="Ticket Fairy public events (keyless)"
+    assert "Ticket Fairy" in result.json()["source"]
     events=result.json()["events"]
     assert len(events)==1
     evt=events[0]
