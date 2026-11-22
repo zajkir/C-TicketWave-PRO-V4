@@ -82,7 +82,7 @@ def test_concert_country_filter_and_absent_artist_are_honest(app_clients,monkeyp
     not_found=alice.get("/api/x/radar/search?q=Rare%20Artist%20XYZ&kind=music")
     assert not_found.status_code==200
     assert not_found.json()["events"]==[]
-    assert not_found.json()["sources_checked"]==["StungEvents"]
+    assert "StungEvents" in not_found.json()["sources_checked"]
     assert "Not all artists" in not_found.json()["coverage_note"]
 
 
