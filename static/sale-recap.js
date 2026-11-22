@@ -334,6 +334,18 @@
   document.addEventListener('keydown',e=>{
     if(!overlay)return;
     if(e.key==='Escape'){e.preventDefault();close();return;}
+    if(e.target?.matches?.('[data-sale-tab]') && ['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){
+      const items=[...overlay.querySelectorAll('[data-sale-tab]')];
+      const index=items.indexOf(e.target);
+      if(index>=0){
+        e.preventDefault();
+        let next=e.key==='Home'?0:e.key==='End'?items.length-1:
+          (index+(e.key==='ArrowRight'?1:-1)+items.length)%items.length;
+        items[next].click();
+        overlay.querySelectorAll('[data-sale-tab]')[next]?.focus();
+        return;
+      }
+    }
     if(e.key!=='Tab')return;
     const focusable=[...overlay.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),[tabindex="0"]')]
       .filter(x=>x.getClientRects().length);
