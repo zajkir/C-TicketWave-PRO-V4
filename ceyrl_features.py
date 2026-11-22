@@ -68,7 +68,7 @@ def ensure_schema(db):
 # Only render images and external links from approved provider-owned hosts.
 # Do not pass arbitrary provider strings into clickable links or image requests.
 _TM_LISTING_HOSTS = re.compile(
-    r"(?:www\\.)?ticketmaster\\.(?:com|co\\.uk|de|fr|es|it|nl|be|ch|ca|ie|cz|pl|at|hu|com\\.au)$",
+    r"(?:www\.)?ticketmaster\.(?:com|co\.uk|de|fr|es|it|nl|be|ch|ca|ie|cz|pl|at|hu|com\.au)$",
     re.IGNORECASE,
 )
 _TM_IMAGE_HOSTS = {"s1.ticketm.net", "images1.ticketmaster.com", "images.ticketmaster.com"}
