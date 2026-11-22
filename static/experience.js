@@ -206,9 +206,9 @@
       '<h2>Čistý zisk podľa podujatia</h2><p>Len zaznamenané transakcie v EUR.</p></div>'+
       (list.length?'<div class="ceyrl-profit-bars">'+list.map(x=>{
         const amount=Number(x.profit_cents);
-        const width=(Math.abs(amount)/max*100).toFixed(1);
+        const level=Math.min(20,Math.max(0,Math.round(Math.abs(amount)/max*20)));
         return '<div class="ceyrl-profit-row"><strong title="'+esc(x.title)+'">'+esc(x.title)+'</strong>'+
-          '<div class="ceyrl-profit-track"><div class="'+(amount<0?'ceyrl-profit-neg':'')+'" style="width:'+width+'%"></div></div>'+
+          '<div class="ceyrl-profit-track"><div class="ceyrl-profit-level-'+level+' '+(amount<0?'ceyrl-profit-neg':'')+'"></div></div>'+
           '<span>'+esc(money(amount))+'</span></div>';
       }).join('')+'</div>':'<p class="ceyrl-panel-muted">Graf bude dostupný po zaznamenaní predaja.</p>')+
       '</section>';
@@ -299,7 +299,7 @@
           '<div class="ceyrl-panel-segments">'+[['7','7 dní'],['30','30 dní'],['90','90 dní']].map(([d,label])=>
             '<button type="button" data-ceyrl-horizon="'+d+'" aria-pressed="'+(radarHorizon===d)+'">'+label+'</button>').join('')+'</div>'+
           '<div class="ceyrl-calendar-bars" role="img" aria-label="'+filtered.length+' tvojich udalostí počas '+days+' dní">'+
-          bars.map(n=>'<span style="height:'+Math.max(8,(n/max*100)).toFixed(1)+'%"></span>').join('')+'</div>'+
+          bars.map(n=>'<span class="ceyrl-calendar-level-'+(n?Math.min(20,Math.max(1,Math.round(n/max*20))):0)+'"></span>').join('')+'</div>'+
           '<div class="ceyrl-calendar-label"><span>Teraz</span><span>+'+days+' dní</span></div>'+
           (filtered.length?'<div class="ceyrl-upcoming-list">'+filtered.slice(0,3).map(e=>
             '<div><strong>'+esc(e.title)+'</strong><small>'+esc(date(e.starts_at))+'</small></div>').join('')+'</div>':
