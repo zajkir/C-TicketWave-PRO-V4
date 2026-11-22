@@ -260,12 +260,20 @@ async function renderXRadar(){
   root.innerHTML=heading('Event Radar',
     'Discover public events instantly, without any personal API key.')+
     '<section class="x-hero x-radar-hero"><div><span class="x-eyebrow">CEYRL / EVENT DISCOVERY</span>'+
-    '<h2>Find concerts worldwide.<br><em>From BTS to Noah Kahan.</em></h2>'+
-    '<p>Find tour dates for international artists, bands, K-pop, festivals and sports across public catalogs. No personal API key needed.</p>'+
+    '<h2>Find your next event.<br><em>From concerts to sport.</em></h2>'+
+    '<p>Search real public event listings. Worldwide Ticketmaster concert coverage becomes available when the site owner connects one shared server key.</p>'+
     '</div><span class="x-hero-decoration" aria-hidden="true">⌾</span></section>'+
-    '<div class="x-radar-status">'+xTag('No personal API key needed','neutral')+
+    '<div class="x-radar-status">'+xTag(status.global_concerts_enabled?
+      'Ticketmaster configured':'Limited public search','neutral')+
     '<span>'+xEsc(status.provider)+'</span></div>'+
     '<p class="x-description x-radar-coverage">'+xEsc(status.coverage_note||'Only events listed by the source are available.')+'</p>'+
+    (!status.global_concerts_enabled?
+      '<details class="x-radar-server-setup"><summary>Site owner: enable worldwide artist search</summary>'+
+      '<p>For artists such as Calin, BTS, Noah Kahan and Nickelback, create a free Ticketmaster Developer account. '+
+      'Add the API key in Bot-Hosting.net → Environment as <code>CTW_TICKETMASTER_API_KEY</code>, save and restart Ceyrl. '+
+      'You set this once for all users. Never paste the key into chat or GitHub.</p>'+
+      '<a href="https://developer.ticketmaster.com/" target="_blank" rel="noopener noreferrer">'+
+      'Ticketmaster Developer portal ↗</a></details>':'')+
     '<form class="x-radar-form" id="x-radar-form"><input name="query" id="x-radar-query" minlength="2" maxlength="80" required '+
     'placeholder="Artist, club, competition or event…" value="'+xEsc(xRadarQuery)+'">'+
     '<select name="kind" id="x-radar-kind" aria-label="Event category">'+
@@ -348,13 +356,16 @@ async function xRadarSearch(){
         xEsc(sources||xRadarSource)+'. '+xEsc(xRadarCoverage)+'</p>';
       // A broken backup provider is not a failed user search. Don't display a
       // prominent red error for every artist when Gigora answered successfully.
-      const degraded=unavailable.length&&xRadarEvents.length===0?
-        '<p class="x-radar-provider-note">Some extra catalogs were unavailable. '+
-        'The available results may not cover all concerts.</p>':'';
+      const degraded=unavailable.length?
+        '<p class="x-radar-provider-note">'+xEsc(unavailable.join(' '))+'</p>':'';
       const results=xRadarEvents.length?
         xRadarResultsHtml(xRadarEvents):
-        '<div class="x-empty">No confirmed matching tour dates in the catalogs that answered. '+
-        'Try the links below to check other ticketing sources.</div>';
+        (data.requires_server_key?
+          '<div class="x-empty">The free public catalog did not list this event. '+
+          'The worldwide Ticketmaster catalog has not been enabled by the site owner. '+
+          'This is not proof that the artist has no concert. Use the links below.</div>':
+          '<div class="x-empty">No matching event found in the connected sources. '+
+          'This does not mean that the artist has no upcoming concert. Check the official links below.</div>');
       const panel=$('#x-radar-results');
       if(panel)panel.innerHTML=status+degraded+results+xRadarExternalLinks(query);
     }
