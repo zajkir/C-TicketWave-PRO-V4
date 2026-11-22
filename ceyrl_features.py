@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from ceyrl_shield import shield_report, delivery_score, VALID_METHODS
 import ceyrl_ai
 import ceyrl_radar
+import ceyrl_sports
 
 TM_EVENTS="https://app.ticketmaster.com/discovery/v2/events.json"
 TM_ONE="https://app.ticketmaster.com/discovery/v2/events/"
@@ -121,21 +122,47 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
             raise HTTPException(503,"Connect a Ticketmaster Discovery API key in Event Radar settings.")
         return key
 
-    def discover_events(user,path,query,country):
+    def discover_events(user,path,query,country,kind="all"):
+        """Search several sources; distinguish missing events from provider errors."""
+        matches=[]
+        sources=[]
+        warnings=[]
         key=get_key(user,path)
-        if key:
+        if key and kind!="sports":
             params={"keyword":query.strip(),"size":15,"sort":"date,asc"}
             if country:params["countryCode"]=country
             try:
                 payload=call_tm(key,params)
-                events=[normalize_tm(x) for x in
+                matches += [normalize_tm(e) for e in
                     ((payload.get("_embedded") or {}).get("events") or [])[:15]]
-                return events,"Ticketmaster Discovery API"
+                sources.append("Ticketmaster")
             except HTTPException:
-                # Legacy or server Ticketmaster credentials must not block the
-                # built-in public event provider when they're unavailable.
-                pass
-        return ceyrl_radar.search_public(query,country),"Ticket Fairy public events (keyless)"
+                warnings.append("Ticketmaster is temporarily unavailable")
+        if kind!="sports" and not matches:
+            try:
+                matches += ceyrl_radar.search_public(query,country)
+                sources.append("Ticket Fairy")
+            except HTTPException:
+                warnings.append("Ticket Fairy is temporarily unavailable")
+        if ceyrl_sports.should_search(query,kind):
+            result,diag=ceyrl_sports.search(query,country,kind)
+            matches += result
+            sources += diag.get("checked",[])
+            warnings += diag.get("errors",[])
+        if not sources:
+            raise HTTPException(502,
+                "No event search provider is currently reachable. Try again later.")
+        found={}
+        for item in matches:
+            if item.get("id") and item.get("name"):
+                found.setdefault(item["id"],item)
+        return list(found.values())[:35]," + ".join(dict.fromkeys(sources)),{
+            "sources_checked":list(dict.fromkeys(sources)),
+            "provider_warnings":warnings,
+            "coverage_note":("The public catalogs have incomplete coverage. "
+                 "No matches does not mean an event doesn't exist. "
+                 "Verify dates, transfer restrictions and availability with organizers.")
+        }
 
     @app.get("/api/x/shield")
     def shield(request:Request):
@@ -196,9 +223,9 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                     os.getenv("TICKETMASTER_API_KEY","").strip())
         return {"connected":True,"key_required":False,"personal_key":personal,
                 "server_ticketmaster":shared,"watch_count":count,
-                "provider":"Ticket Fairy public events (no key required)" +
-                           (" + Ticketmaster if configured" if shared or personal else ""),
-                "coverage_note":"Keyless search shows Ticket Fairy's published events, not every event or Ticketmaster listing.",
+                "provider":"Ticket Fairy + sports schedules" +
+                           (" + Ticketmaster" if shared or personal else ""),
+                "coverage_note":"Keyless Radar searches Ticket Fairy and selected public sports feeds. It cannot see every event. Ticketmaster coverage needs a server-level key.",
                 "refresh_note":"Watchlist refreshes on demand. No background scheduler is active."}
 
     # Deprecated optional personal integration endpoints remain for existing users.
@@ -227,7 +254,8 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
 
     @app.get("/api/x/radar/search")
     def radar_search(request:Request,q:str=Query(min_length=2,max_length=80),
-                     country:str=Query(default="",max_length=2)):
+                     country:str=Query(default="",max_length=2),
+                     kind:str=Query(default="all",pattern=r"^(all|music|sports)$")):
         user,path=user_db(request)
         cc=country.upper().strip()
         if cc not in TM_COUNTRIES:raise HTTPException(422,"Unsupported country code.")
@@ -235,12 +263,11 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
         if len(q)<2 or any(ord(ch)<32 or ord(ch)==127 for ch in q):
             raise HTTPException(422,"Enter an artist or event name.")
         ceyrl_radar.rate_limit(auth_db,connection,user["id"],"search")
-        events,source=discover_events(user,path,q,cc)
+        events,source,diagnostics=discover_events(user,path,q,cc,kind)
         with connection(path,True) as db:
             ensure_schema(db)
             ceyrl_radar.remember(db,events)
-        return {"events":events,"source":source,
-                "coverage_note":"Results are limited to the public events indexed by the named source. Verify date and tickets at the official source."}
+        return {"events":events,"source":source,**diagnostics}
 
     @app.get("/api/x/radar/watches")
     def radar_watches(request:Request):
@@ -300,7 +327,7 @@ def install_ceyrl_x(app, *,user_db,connection,select,personal_key,stamp,log,auth
                             continue
                     except (TypeError,ValueError):
                         pass
-                matches,provider=discover_events(user,path,watch["query"],watch["country"])
+                matches,provider,_=discover_events(user,path,watch["query"],watch["country"])
                 with connection(path,True) as db:
                     ceyrl_radar.remember(db,matches)
                     for x in matches:
