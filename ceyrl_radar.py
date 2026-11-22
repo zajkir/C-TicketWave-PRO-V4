@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi import HTTPException
 import ceyrl_music
+import ceyrl_gigora
 
 PUBLIC_API = "https://www.ticketfairy.com/api/v1/events/listing"
 CACHE_TTL = 300
@@ -151,6 +152,8 @@ def _valid_provider_url(url):
         return bool(re.fullmatch(r"/soccer/match/_/gameId/\d{1,12}",parts.path))
     if parts.hostname=="stungevents.com":
         return bool(re.fullmatch(r"/event/[a-zA-Z0-9_-]{4,135}",parts.path))
+    if ceyrl_gigora._hosted_url(url):
+        return True
     if ceyrl_music._safe_link(url):
         return True
     return False
@@ -172,7 +175,8 @@ def remember(db,events):
         if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",ident) or
                 re.fullmatch(r"sp:(?:ts|es):\d{1,12}",ident) or
                 re.fullmatch(r"se:[A-Za-z0-9_-]{4,135}",ident) or
-                re.fullmatch(r"td:[A-Za-z0-9_-]{6,70}",ident)):
+                re.fullmatch(r"td:[A-Za-z0-9_-]{6,70}",ident) or
+                re.fullmatch(r"gi:[a-f0-9]{26}",ident)):
             continue
         if not _valid_provider_url(item.get("url")):
             continue
@@ -188,7 +192,8 @@ def lookup(db,external_id):
     if not (re.fullmatch(r"tf:[A-Za-z0-9_-]{2,90}",external_id) or
             re.fullmatch(r"sp:(?:ts|es):\d{1,12}",external_id) or
             re.fullmatch(r"se:[A-Za-z0-9_-]{4,135}",external_id) or
-            re.fullmatch(r"td:[A-Za-z0-9_-]{6,70}",external_id)):
+            re.fullmatch(r"td:[A-Za-z0-9_-]{6,70}",external_id) or
+            re.fullmatch(r"gi:[a-f0-9]{26}",external_id)):
         raise HTTPException(422,"Invalid event identifier.")
     init_cache(db)
     row=db.execute("""SELECT payload,observed_at FROM x_radar_public_results
