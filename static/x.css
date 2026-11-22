@@ -183,3 +183,10 @@
   background:#59467b;border-color:#b39de2;color:white
 }
 @media(max-width:640px){.x-radar-artists{padding:14px}.x-radar-artist-chip{padding:8px 10px}}
+
+/* A backup feed outage should be neutral, not a fatal red search error. */
+.x-radar-provider-note{
+  background:rgba(88,77,112,.15);border:1px solid rgba(137,126,168,.3);
+  border-radius:10px;padding:10px 14px;color:#b7b1c7;
+  font-size:11px;line-height:1.6;margin:10px 0 16px;
+}
