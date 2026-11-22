@@ -174,8 +174,9 @@ def lookup(db,external_id):
     return record
 
 
-def rate_limit(auth_db,connection,user_id,kind):
+def rate_limit(auth_db,connection,user_id,kind,units=1):
     """Persistent per-account and global ceilings for public provider usage."""
+    units=max(1,min(15,int(units)))
     stamp=time.time()
     minute=int(stamp//60)
     day=int(stamp//86400)
@@ -193,12 +194,12 @@ def rate_limit(auth_db,connection,user_id,kind):
                             (user_id,day)).fetchone()[0]
         global_minute=db.execute("SELECT COALESCE(SUM(calls),0) FROM x_radar_quota WHERE minute=?",
                                  (minute,)).fetchone()[0]
-        if user_minute>=6:
-            raise HTTPException(429,"Event Radar limit: up to 6 actions per minute per account.")
-        if user_day>=100:
+        if user_minute+units>20:
+            raise HTTPException(429,"Event Radar limit: up to 20 provider-search units per minute per account.")
+        if user_day+units>150:
             raise HTTPException(429,"Event Radar daily limit reached. Try tomorrow.")
-        if global_minute>=50:
+        if global_minute+units>105:
             raise HTTPException(429,"Event Radar is busy. Try again in a minute.")
         db.execute("""INSERT INTO x_radar_quota(user_id,kind,day,minute,calls)
-          VALUES(?,?,?,?,1) ON CONFLICT(user_id,kind,minute)
-          DO UPDATE SET calls=calls+1""",(user_id,kind,day,minute))
+          VALUES(?,?,?,?,?) ON CONFLICT(user_id,kind,minute)
+          DO UPDATE SET calls=calls+excluded.calls""",(user_id,kind,day,minute,units))
