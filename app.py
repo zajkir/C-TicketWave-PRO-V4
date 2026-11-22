@@ -1125,15 +1125,3 @@ install_ceyrl_x(
     personal_key=personal_key, stamp=stamp, log=log, auth_db=AUTH_DB
 )
 
-
-# Magic Inbox – additive, per-user encrypted purchase confirmation workflow.
-# Email ingestion is disabled unless CTW_MAGIC_INBOX_DOMAIN and the Mailgun
-# webhook signing key are both configured. Manual .eml and paste work locally.
-from ceyrl_inbox import install_magic_inbox
-
-install_magic_inbox(
-    app, user_db=user_db, connection=connection, select=select,
-    personal_key=personal_key, storage_dir=storage_dir,
-    auth_db=AUTH_DB, init_user_db=init_user_db, log=log, stamp=stamp,
-    date_utc=date_utc, cents=cents, currency=currency
-)
