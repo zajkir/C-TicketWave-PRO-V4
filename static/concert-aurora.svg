@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 560" role="img" aria-label="Stylized concert audience under purple and turquoise stage lights">
+<defs>
+<linearGradient id="night" x1="0" x2="1" y1="1" y2="0"><stop stop-color="#14092b"/><stop offset=".48" stop-color="#2a1055"/><stop offset="1" stop-color="#061d31"/></linearGradient>
+<radialGradient id="violet"><stop stop-color="#de7fff" stop-opacity=".8"/><stop offset=".38" stop-color="#9e37ff" stop-opacity=".3"/><stop offset="1" stop-color="#9e37ff" stop-opacity="0"/></radialGradient>
+<radialGradient id="teal"><stop stop-color="#24f1df" stop-opacity=".72"/><stop offset=".45" stop-color="#10a9c2" stop-opacity=".24"/><stop offset="1" stop-color="#00c6c2" stop-opacity="0"/></radialGradient>
+<linearGradient id="beam1" x1=".5" x2=".2" y1="0" y2="1"><stop stop-color="#e28bff" stop-opacity=".8"/><stop offset="1" stop-color="#c355ff" stop-opacity="0"/></linearGradient>
+<linearGradient id="beam2" x1=".5" x2=".8" y1="0" y2="1"><stop stop-color="#6dffff" stop-opacity=".6"/><stop offset="1" stop-color="#35ceff" stop-opacity="0"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="18"/></filter>
+<g id="head"><ellipse cx="0" cy="0" rx="22" ry="24"/><path d="M-29 14Q0 0 29 14L45 99H-46Z"/></g>
+<g id="hand"><path d="M-10 98L-12 32L-21 -11Q-23 -21 -16 -22Q-8 -24 -5 -8L1 22L-2 -37Q-2 -49 6 -48Q16 -46 14 -35L18 19L23 -29Q27 -40 35 -36Q41 -30 36 -19L32 25L44 -6Q50 -17 57 -13Q65 -7 57 9L39 57L33 99Z"/></g>
+</defs>
+<rect width="1400" height="560" fill="url(#night)"/>
+<ellipse cx="980" cy="160" rx="430" ry="300" fill="url(#violet)"/>
+<ellipse cx="690" cy="110" rx="460" ry="320" fill="url(#teal)"/>
+<ellipse cx="1230" cy="180" rx="320" ry="260" fill="url(#teal)"/>
+<path d="M480 0L870 0L750 480Z" fill="url(#beam1)" opacity=".45"/>
+<path d="M730 0L1000 0L1255 530Z" fill="url(#beam2)" opacity=".48"/>
+<path d="M1040 0L1145 0L865 560Z" fill="url(#beam1)" opacity=".45"/>
+<path d="M1270 0L1350 0L1160 560Z" fill="url(#beam2)" opacity=".38"/>
+<circle cx="605" cy="20" r="80" fill="#ea8cff" opacity=".7" filter="url(#glow)"/>
+<circle cx="840" cy="35" r="68" fill="#65f5ee" opacity=".6" filter="url(#glow)"/>
+<circle cx="1075" cy="26" r="92" fill="#d18aff" opacity=".64" filter="url(#glow)"/>
+<circle cx="1290" cy="40" r="65" fill="#4bedf2" opacity=".6" filter="url(#glow)"/>
+<path d="M0 320Q185 250 320 330T690 295T1020 330T1400 285V560H0Z" fill="#2d1547" opacity=".27"/>
+<g fill="#160b27" opacity=".8"><use href="#head" transform="translate(52 420) scale(1.35)"/><use href="#head" transform="translate(170 435) scale(1.65)"/><use href="#head" transform="translate(295 410) scale(1.28)"/><use href="#head" transform="translate(415 430) scale(1.45)"/><use href="#head" transform="translate(533 407) scale(1.48)"/><use href="#head" transform="translate(658 423) scale(1.7)"/><use href="#head" transform="translate(786 412) scale(1.4)"/><use href="#head" transform="translate(905 425) scale(1.55)"/><use href="#head" transform="translate(1036 395) scale(1.65)"/><use href="#head" transform="translate(1150 427) scale(1.37)"/><use href="#head" transform="translate(1286 405) scale(1.55)"/><use href="#head" transform="translate(1390 430) scale(1.4)"/></g>
+<g fill="#11081f" opacity=".92"><use href="#hand" transform="translate(120 200) rotate(-18) scale(.9)"/><use href="#hand" transform="translate(340 180) rotate(13) scale(1.1)"/><use href="#hand" transform="translate(580 225) rotate(-17) scale(.75)"/><use href="#hand" transform="translate(760 130) rotate(-6) scale(1.4)"/><use href="#hand" transform="translate(1040 180) rotate(13) scale(1.1)"/><use href="#hand" transform="translate(1230 120) rotate(-18) scale(1.4)"/></g>
+<path d="M0 470Q210 423 358 475T742 468T1160 452T1400 476V560H0Z" fill="#0e071b"/>
+<g opacity=".65"><circle cx="240" cy="90" r="2" fill="#f4d5ff"/><circle cx="330" cy="145" r="2" fill="#75f8ec"/><circle cx="590" cy="66" r="2" fill="#fff"/><circle cx="735" cy="110" r="3" fill="#fff"/><circle cx="995" cy="96" r="2" fill="#fff"/><circle cx="1170" cy="115" r="2" fill="#83f9ec"/><circle cx="1340" cy="65" r="2" fill="#fff"/></g>
+</svg>
